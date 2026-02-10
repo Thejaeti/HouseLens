@@ -13,7 +13,12 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "HouseLens uses the camera to point at houses and identify them.",
+        "NSLocationWhenInUseUsageDescription": "HouseLens uses your location to estimate the address of the house you're looking at.",
+        "NSMotionUsageDescription": "HouseLens uses device motion for compass heading to determine which direction you're facing."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,10 +26,19 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "CAMERA",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-camera",
+      "expo-location"
+    ]
   }
 }
