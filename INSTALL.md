@@ -31,7 +31,10 @@
    - **iPhone**: [Expo Go on App Store](https://apps.apple.com/app/expo-go/id982107779)
    - **Android**: [Expo Go on Google Play](https://play.google.com/store/apps/details?id=host.exp.exponent)
 
-2. **Open the link** the developer sent you — it will open directly in Expo Go.
+2. **Open this link on your phone**:
+   [https://expo.dev/accounts/thejaeti/projects/HouseLens/updates/39687f3a-8f48-4bd1-a073-930b7b7413e6](https://expo.dev/accounts/thejaeti/projects/HouseLens/updates/39687f3a-8f48-4bd1-a073-930b7b7413e6)
+
+   It will open directly in Expo Go.
 
 3. **Grant permissions** when prompted:
    - **Camera** — needed to point at houses
