@@ -1,28 +1,85 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { View, StyleSheet } from "react-native";
 import { CameraView } from "expo-camera";
 import { DEFAULT_DISTANCE } from "../constants";
 import { useLocation } from "../hooks/useLocation";
 import { useCompassHeading } from "../hooks/useCompassHeading";
 import { useHouseLookup } from "../hooks/useHouseLookup";
+import { useDevicePitch } from "../hooks/useDevicePitch";
 import { Crosshair } from "../components/Crosshair";
 import { CompassHeading } from "../components/CompassHeading";
 import { DistanceSlider } from "../components/DistanceSlider";
 import { LookupButton } from "../components/LookupButton";
-import { AddressCard } from "../components/AddressCard";
+import { AROverlay } from "../components/AROverlay";
+import { LookupResult } from "../types";
+import { SavedHouse } from "../hooks/useSavedHouses";
 
-export function CameraScreen() {
+const AUTO_LOOKUP_SECONDS = 5;
+const HEADING_THRESHOLD = 8;
+
+interface CameraScreenProps {
+  onSave?: (result: LookupResult) => void;
+  isSaved?: (address: string) => boolean;
+  savedHouses?: SavedHouse[];
+}
+
+export function CameraScreen({ onSave, isSaved, savedHouses = [] }: CameraScreenProps) {
   const [distance, setDistance] = useState(DEFAULT_DISTANCE);
   const { coords } = useLocation();
   const { heading } = useCompassHeading();
   const { state, lookup, reset } = useHouseLookup();
+  const pitch = useDevicePitch();
+  const [autoProgress, setAutoProgress] = useState(0);
+  const lastHeadingRef = useRef<number | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const canLookup = coords !== null && heading !== null;
 
   const handleLookup = async () => {
     if (!coords || heading === null) return;
+    setAutoProgress(0);
     await lookup(coords, heading, distance);
   };
+
+  // Auto-lookup timer
+  useEffect(() => {
+    if (!canLookup || state.status === "loading" || state.status === "success") {
+      setAutoProgress(0);
+      return;
+    }
+
+    if (heading !== null && lastHeadingRef.current !== null) {
+      let diff = Math.abs(heading - lastHeadingRef.current);
+      if (diff > 180) diff = 360 - diff;
+      if (diff > HEADING_THRESHOLD) {
+        setAutoProgress(0);
+      }
+    }
+    lastHeadingRef.current = heading;
+  }, [heading, canLookup, state.status]);
+
+  useEffect(() => {
+    if (!canLookup || state.status === "loading" || state.status === "success") {
+      if (timerRef.current) clearInterval(timerRef.current);
+      return;
+    }
+
+    timerRef.current = setInterval(() => {
+      setAutoProgress((prev) => {
+        const next = prev + 0.1;
+        if (next >= AUTO_LOOKUP_SECONDS) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          setTimeout(() => handleLookup(), 0);
+          return 0;
+        }
+        return next;
+      });
+    }, 100);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [canLookup, state.status, coords, distance]);
 
   return (
     <View style={styles.container}>
@@ -37,10 +94,7 @@ export function CameraScreen() {
           </View>
 
           {/* Bottom controls */}
-          <View style={styles.bottomSection}>
-            {/* Address card (shown after lookup) */}
-            <AddressCard state={state} onDismiss={reset} />
-
+          <View style={styles.bottomSection} pointerEvents="box-none">
             {/* Distance slider */}
             <DistanceSlider distance={distance} onDistanceChange={setDistance} />
 
@@ -50,9 +104,20 @@ export function CameraScreen() {
                 onPress={handleLookup}
                 disabled={!canLookup}
                 loading={state.status === "loading"}
+                autoProgress={autoProgress / AUTO_LOOKUP_SECONDS}
               />
             </View>
           </View>
+
+          {/* AR overlay — rendered last so it's on top of everything */}
+          {coords && heading !== null && savedHouses.length > 0 && (
+            <AROverlay
+              userCoords={coords}
+              heading={heading}
+              pitch={pitch}
+              savedHouses={savedHouses}
+            />
+          )}
         </View>
       </CameraView>
     </View>
@@ -79,7 +144,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingBottom: 50,
+    paddingBottom: 16,
     gap: 16,
   },
   buttonRow: {

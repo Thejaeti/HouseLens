@@ -6,15 +6,18 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
-import { LookupState } from "../types";
-import { openZillow } from "../utils/zillowUrl";
+import * as Haptics from "expo-haptics";
+import { LookupState, LookupResult } from "../types";
+import { PLATFORMS, openPlatform } from "../utils/listingUrls";
 
 interface AddressCardProps {
   state: LookupState;
   onDismiss: () => void;
+  onSave?: (result: LookupResult) => void;
+  isSaved?: boolean;
 }
 
-export function AddressCard({ state, onDismiss }: AddressCardProps) {
+export function AddressCard({ state, onDismiss, onSave, isSaved }: AddressCardProps) {
   if (state.status === "idle") return null;
 
   if (state.status === "loading") {
@@ -39,17 +42,33 @@ export function AddressCard({ state, onDismiss }: AddressCardProps) {
 
   const { address } = state.result;
 
+  const handleSave = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onSave?.(state.result);
+  };
+
   return (
     <View style={styles.card}>
-      <Text style={styles.address} numberOfLines={3}>
-        {address}
-      </Text>
-      <TouchableOpacity
-        style={styles.zillowButton}
-        onPress={() => openZillow(address)}
-      >
-        <Text style={styles.zillowText}>View on Zillow</Text>
-      </TouchableOpacity>
+      <View style={styles.addressRow}>
+        <Text style={styles.address} numberOfLines={3}>
+          {address}
+        </Text>
+        <TouchableOpacity onPress={handleSave} style={styles.heartButton}>
+          <Text style={styles.heartText}>{isSaved ? "♥" : "♡"}</Text>
+        </TouchableOpacity>
+      </View>
+      <Text style={styles.viewOnLabel}>View listing on:</Text>
+      <View style={styles.platformRow}>
+        {PLATFORMS.map((platform) => (
+          <TouchableOpacity
+            key={platform.name}
+            style={[styles.platformButton, { backgroundColor: platform.color }]}
+            onPress={() => openPlatform(platform, address)}
+          >
+            <Text style={styles.platformText}>{platform.name}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
       <TouchableOpacity style={styles.dismissButton} onPress={onDismiss}>
         <Text style={styles.dismissText}>Dismiss</Text>
       </TouchableOpacity>
@@ -70,27 +89,50 @@ const styles = StyleSheet.create({
     color: "#ccc",
     fontSize: 14,
   },
+  addressRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   address: {
+    flex: 1,
     color: "#fff",
     fontSize: 16,
     fontWeight: "500",
     textAlign: "center",
     lineHeight: 22,
   },
+  heartButton: {
+    padding: 4,
+  },
+  heartText: {
+    fontSize: 24,
+    color: "#FF6B6B",
+  },
   errorText: {
     color: "#FF6B6B",
     fontSize: 14,
     textAlign: "center",
   },
-  zillowButton: {
-    backgroundColor: "#4A90D9",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 24,
+  viewOnLabel: {
+    color: "rgba(255, 255, 255, 0.6)",
+    fontSize: 12,
+    fontWeight: "500",
+    textTransform: "uppercase",
+    letterSpacing: 1,
   },
-  zillowText: {
+  platformRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  platformButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  platformText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: "700",
   },
   dismissButton: {

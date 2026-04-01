@@ -1,17 +1,28 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import { NavigationContainer } from "@react-navigation/native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { SavedHouse } from "./src/hooks/useSavedHouses";
 import {
   requestAllPermissions,
   PermissionResult,
 } from "./src/utils/permissions";
 import { CameraScreen } from "./src/screens/CameraScreen";
+import { SavedHousesScreen } from "./src/screens/SavedHousesScreen";
+import { MapScreen } from "./src/screens/MapScreen";
+import { useSavedHouses } from "./src/hooks/useSavedHouses";
 
 type AppState = "loading" | "granted" | "denied";
+
+const Tab = createBottomTabNavigator();
 
 export default function App() {
   const [appState, setAppState] = useState<AppState>("loading");
   const [permResult, setPermResult] = useState<PermissionResult | null>(null);
+  const { savedHouses, saveHouse, removeHouse, isSaved } = useSavedHouses();
+  const [focusHouse, setFocusHouse] = useState<SavedHouse | null>(null);
+  const navigationRef = useRef<any>(null);
 
   useEffect(() => {
     (async () => {
@@ -58,10 +69,78 @@ export default function App() {
   }
 
   return (
-    <>
-      <CameraScreen />
-      <StatusBar style="light" />
-    </>
+    <NavigationContainer ref={navigationRef}>
+      <Tab.Navigator
+        screenOptions={{
+          tabBarActiveTintColor: "#4A90D9",
+          tabBarInactiveTintColor: "#999",
+          tabBarStyle: {
+            backgroundColor: "#fff",
+            borderTopColor: "#e0e0e0",
+          },
+          headerShown: false,
+        }}
+      >
+        <Tab.Screen
+          name="Camera"
+          options={{
+            tabBarLabel: "Camera",
+            tabBarIcon: ({ color, size }) => (
+              <Text style={{ fontSize: size, color }}>📷</Text>
+            ),
+          }}
+        >
+          {() => (
+            <>
+              <CameraScreen
+                onSave={saveHouse}
+                isSaved={isSaved}
+                savedHouses={savedHouses}
+              />
+              <StatusBar style="light" />
+            </>
+          )}
+        </Tab.Screen>
+        <Tab.Screen
+          name="Saved"
+          options={{
+            tabBarLabel: "Saved",
+            tabBarBadge: savedHouses.length > 0 ? savedHouses.length : undefined,
+            tabBarIcon: ({ color, size }) => (
+              <Text style={{ fontSize: size, color }}>♥</Text>
+            ),
+            headerShown: true,
+            headerTitle: "Saved Houses",
+          }}
+        >
+          {() => (
+            <SavedHousesScreen
+              savedHouses={savedHouses}
+              onRemove={removeHouse}
+              onShowOnMap={(house) => {
+                setFocusHouse(house);
+                navigationRef.current?.navigate("Map");
+              }}
+            />
+          )}
+        </Tab.Screen>
+        <Tab.Screen
+          name="Map"
+          options={{
+            tabBarLabel: "Map",
+            tabBarIcon: ({ color, size }) => (
+              <Text style={{ fontSize: size, color }}>🗺</Text>
+            ),
+            headerShown: true,
+            headerTitle: "Saved Houses Map",
+          }}
+        >
+          {() => (
+            <MapScreen savedHouses={savedHouses} focusHouse={focusHouse} />
+          )}
+        </Tab.Screen>
+      </Tab.Navigator>
+    </NavigationContainer>
   );
 }
 
