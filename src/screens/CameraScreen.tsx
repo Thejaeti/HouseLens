@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Text } from "react-native";
 import { CameraView } from "expo-camera";
 import { DEFAULT_DISTANCE } from "../constants";
 import { useLocation } from "../hooks/useLocation";
@@ -83,43 +83,38 @@ export function CameraScreen({ onSave, isSaved, savedHouses = [] }: CameraScreen
 
   return (
     <View style={styles.container}>
-      <CameraView style={styles.camera} facing="back">
-        <View style={styles.overlay}>
-          {/* Crosshair in center */}
-          <Crosshair />
+      <CameraView style={StyleSheet.absoluteFillObject} facing="back" />
 
-          {/* Compass heading at top */}
-          <View style={styles.topSection}>
-            <CompassHeading heading={heading} />
-          </View>
+      <View style={styles.overlay} pointerEvents="box-none">
+        <Crosshair />
 
-          {/* Bottom controls */}
-          <View style={styles.bottomSection} pointerEvents="box-none">
-            {/* Distance slider */}
-            <DistanceSlider distance={distance} onDistanceChange={setDistance} />
-
-            {/* Identify button */}
-            <View style={styles.buttonRow}>
-              <LookupButton
-                onPress={handleLookup}
-                disabled={!canLookup}
-                loading={state.status === "loading"}
-                autoProgress={autoProgress / AUTO_LOOKUP_SECONDS}
-              />
-            </View>
-          </View>
-
-          {/* AR overlay — rendered last so it's on top of everything */}
-          {coords && heading !== null && savedHouses.length > 0 && (
-            <AROverlay
-              userCoords={coords}
-              heading={heading}
-              pitch={pitch}
-              savedHouses={savedHouses}
-            />
-          )}
+        <View style={styles.topSection}>
+          <CompassHeading heading={heading} />
+          <Text style={styles.debugText}>pitch: {pitch.toFixed(1)}°</Text>
         </View>
-      </CameraView>
+
+        <View style={styles.bottomSection} pointerEvents="box-none">
+          <DistanceSlider distance={distance} onDistanceChange={setDistance} />
+
+          <View style={styles.buttonRow}>
+            <LookupButton
+              onPress={handleLookup}
+              disabled={!canLookup}
+              loading={state.status === "loading"}
+              autoProgress={autoProgress / AUTO_LOOKUP_SECONDS}
+            />
+          </View>
+        </View>
+      </View>
+
+      {coords && heading !== null && savedHouses.length > 0 && (
+        <AROverlay
+          userCoords={coords}
+          heading={heading}
+          pitch={pitch}
+          savedHouses={savedHouses}
+        />
+      )}
     </View>
   );
 }
@@ -129,11 +124,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#000",
   },
-  camera: {
-    flex: 1,
-  },
   overlay: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
   },
   topSection: {
     paddingTop: 60,
@@ -150,5 +142,15 @@ const styles = StyleSheet.create({
   buttonRow: {
     alignItems: "center",
     paddingTop: 8,
+  },
+  debugText: {
+    color: "#fff",
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginTop: 8,
+    fontSize: 12,
+    fontFamily: "Courier",
   },
 });

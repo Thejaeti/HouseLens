@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { DeviceMotion } from "expo-sensors";
 
-const SMOOTHING = 0.15; // lower = smoother but laggier, higher = more responsive
+// Low-pass filter the raw accelerometer to isolate gravity from hand motion.
+// At ~60fps, 0.05 gives a time constant of ~330ms — slow enough to reject
+// shake, fast enough to track intentional tilts.
+const GRAVITY_SMOOTHING = 0.05;
 
 /**
  * Returns a smoothed device pitch in degrees.
@@ -11,21 +14,29 @@ const SMOOTHING = 0.15; // lower = smoother but laggier, higher = more responsiv
  */
 export function useDevicePitch(): number {
   const [pitch, setPitch] = useState(0);
-  const smoothedRef = useRef(0);
+  const gravityRef = useRef<{ x: number; y: number; z: number } | null>(null);
 
   useEffect(() => {
-    DeviceMotion.setUpdateInterval(16); // ~60fps for smoother updates
+    DeviceMotion.setUpdateInterval(16);
 
     const sub = DeviceMotion.addListener((data) => {
-      if (data.rotation) {
-        const rawPitch = (data.rotation.beta * 180) / Math.PI - 90;
+      const g = data.accelerationIncludingGravity;
+      if (!g) return;
 
-        // Exponential smoothing to eliminate jitter
-        smoothedRef.current =
-          smoothedRef.current + SMOOTHING * (rawPitch - smoothedRef.current);
-
-        setPitch(smoothedRef.current);
+      if (gravityRef.current === null) {
+        gravityRef.current = { x: g.x, y: g.y, z: g.z };
+      } else {
+        gravityRef.current.x += GRAVITY_SMOOTHING * (g.x - gravityRef.current.x);
+        gravityRef.current.y += GRAVITY_SMOOTHING * (g.y - gravityRef.current.y);
+        gravityRef.current.z += GRAVITY_SMOOTHING * (g.z - gravityRef.current.z);
       }
+
+      // Convention-agnostic: atan2(z, |y|) = 0 at horizon regardless of whether
+      // Expo reports y as +9.8 or -9.8 when the phone is held vertically.
+      // Sign of pitch follows z: on iOS, z > 0 when camera tilts up toward sky.
+      const { y, z } = gravityRef.current;
+      const rawPitch = (Math.atan2(z, Math.abs(y)) * 180) / Math.PI;
+      setPitch(rawPitch);
     });
 
     return () => sub.remove();
