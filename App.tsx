@@ -11,6 +11,7 @@ import {
 import { CameraScreen } from "./src/screens/CameraScreen";
 import { SavedHousesScreen } from "./src/screens/SavedHousesScreen";
 import { MapScreen } from "./src/screens/MapScreen";
+import { DriveScreen } from "./src/screens/DriveScreen";
 import { useSavedHouses } from "./src/hooks/useSavedHouses";
 
 type AppState = "loading" | "granted" | "denied";
@@ -139,6 +140,18 @@ export default function App() {
             <MapScreen savedHouses={savedHouses} focusHouse={focusHouse} />
           )}
         </Tab.Screen>
+        <Tab.Screen
+          name="Drive"
+          options={{
+            tabBarLabel: "Drive",
+            tabBarIcon: ({ color, size }) => (
+              <Text style={{ fontSize: size, color }}>🚗</Text>
+            ),
+            headerShown: true,
+            headerTitle: "For Sale Nearby",
+          }}
+          component={DriveScreen}
+        />
       </Tab.Navigator>
     </NavigationContainer>
   );
