@@ -3,7 +3,12 @@ import * as Linking from "expo-linking";
 interface ListingPlatform {
   name: string;
   color: string;
+  appScheme?: string;
   buildUrl: (address: string) => string;
+}
+
+function realtorSlug(address: string): string {
+  return address.replace(/,/g, "").trim().replace(/\s+/g, "-");
 }
 
 export const PLATFORMS: ListingPlatform[] = [
@@ -16,14 +21,15 @@ export const PLATFORMS: ListingPlatform[] = [
   {
     name: "Redfin",
     color: "#A02021",
-    buildUrl: (address) =>
-      `https://www.google.com/search?q=${encodeURIComponent(`redfin ${address}`)}`,
+    appScheme: "redfin://",
+    buildUrl: () => `https://www.redfin.com/`,
   },
   {
     name: "Realtor.com",
     color: "#D92228",
+    appScheme: "realtor://",
     buildUrl: (address) =>
-      `https://www.google.com/search?q=${encodeURIComponent(`realtor.com ${address}`)}`,
+      `https://www.realtor.com/realestateandhomes-search/${encodeURIComponent(realtorSlug(address))}`,
   },
 ];
 
@@ -31,6 +37,13 @@ export async function openPlatform(
   platform: ListingPlatform,
   address: string
 ): Promise<void> {
-  const url = platform.buildUrl(address);
-  await Linking.openURL(url);
+  if (platform.appScheme) {
+    try {
+      await Linking.openURL(platform.appScheme);
+      return;
+    } catch {
+      // App not installed — fall through to web URL
+    }
+  }
+  await Linking.openURL(platform.buildUrl(address));
 }
