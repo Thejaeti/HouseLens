@@ -1,228 +1,196 @@
-# HouseLens — App Store Submission Guide
+# HouseLens — TestFlight Setup Guide
 
-A non-developer-friendly walkthrough for getting HouseLens onto the Apple App Store. You and Zack can read through this together. Estimated total time from start to "live on the store": **2–4 weeks**, most of which is waiting on Apple.
+How to get HouseLens installed on your phone, Zach's phone, and a few friends' phones — **without** using Expo Go, tunnels, or publishing to the App Store. This uses **TestFlight**, Apple's built-in beta testing system.
 
----
-
-## Current State: What's Ready vs. What's Not
-
-### ✅ Already in place
-- Expo project with EAS configured (`eas.json` exists)
-- Bundle identifier set for Android (`com.thejaeti.houselens`)
-- Camera, location, and motion permission descriptions already written in `app.json`
-- App icon and splash screen assets in `assets/`
-- Working features: camera-based house identification, favorites, saved-houses map, Drive mode with yard signs
-
-### ⚠️ Needs to be done first (before we build for production)
-- **Remove the `pitch: XX°` debug readout** from the camera screen — reviewers will notice
-- **Remove the "Demo listings · not real homes" banner** on the Drive tab OR decide whether to ship Drive mode at all in v1
-- **Decide what to do about AR overlay** — the vertical positioning is "better but not there." Either finish fixing it or hide the feature for v1
-- **Add an iOS bundle identifier** in `app.json` (currently only Android is set)
-- **Write a privacy policy** and host it on a public URL (Apple requires this)
-- **Take real App Store screenshots** using the iPhone simulator or a real device
-- **Decide on an App Store category** (likely "Lifestyle" or "Navigation")
+**Estimated time:** ~1 day of calendar time (most of it waiting on Apple), but only about 1–2 hours of actual hands-on work.
 
 ---
 
-## Prerequisites (one-time setup)
+## What TestFlight Gives You
 
-1. **Apple Developer Account** — Zack's wife's account. She needs to:
-   - Add you or Zack as a team member in [developer.apple.com/account](https://developer.apple.com/account) → *People*
-   - Grant the **Admin** role so you can create app records and manage certificates
-   - Provide the **Team ID** (found in her account membership page — looks like `A1B2C3D4E5`)
+- Real app on your phone — no Expo Go, no dev server, no tunnels
+- Up to **100 internal testers** (no review needed, instant installs) or **10,000 external testers** (one ~24hr beta review per version, then instant updates)
+- Testers install via Apple's free **TestFlight** app — feels just like the App Store
+- When you push a new build, everyone gets notified to update
+- **Nobody outside your invite list** can find or install it — not public
+- Free (comes with the Apple Developer account)
 
-2. **Apple ID for App Store Connect** — whoever submits the app needs their own Apple ID, signed in to [App Store Connect](https://appstoreconnect.apple.com)
+**Main gotcha:** TestFlight builds expire **90 days after upload**. Push a new build at least once every 3 months to keep testers on a working version.
 
-3. **EAS CLI installed on your Mac**:
+---
+
+## Two Paths: Internal vs External Testing
+
+Pick one. You can always switch later.
+
+| | **Internal testers** | **External testers** |
+|---|---|---|
+| Max people | 100 | 10,000 |
+| Apple review needed? | ❌ Never | ✅ ~24hr on first build of a version |
+| Who can be a tester? | People added to your App Store Connect team | Anyone with an Apple ID + email |
+| How they install | TestFlight invite link | TestFlight invite link |
+| Time to first install | Minutes after upload | 1 day (after beta review) |
+| Best for | You + Zach (trusted, small group) | Friends/acquaintances you don't want on the dev team |
+
+**Recommendation:** start with **internal testing** (just you + Zach). Once the app feels good, switch to external if you want to share with more friends.
+
+---
+
+## Prerequisites (one-time)
+
+1. **Apple Developer team access** — Zach's wife needs to add you (and Zach) to her team in [App Store Connect](https://appstoreconnect.apple.com):
+   - Log in → **Users and Access** → **+**
+   - Add your Apple ID email, Zach's Apple ID email
+   - Role: **Developer** (enough to install TestFlight builds; **App Manager** if you want to upload builds yourself)
+   - She'll also need to add you to the Apple Developer portal at [developer.apple.com/account](https://developer.apple.com/account) → *People*
+
+2. **Each tester needs an Apple ID** — they almost certainly already have one (it's what they use on their iPhone). No special account creation needed.
+
+3. **EAS CLI installed** — open Terminal and run:
    ```bash
    npm install -g eas-cli
    eas login
    ```
-   Use your Expo account (you already have one — `thejaeti`).
+   (You already have an Expo account — `thejaeti`. Use that.)
 
-4. **A privacy policy hosted somewhere public.** Free options:
-   - GitHub Pages (free, can be just a simple HTML page)
-   - [app-privacy-policy-generator.firebaseapp.com](https://app-privacy-policy-generator.firebaseapp.com) → download → host on GitHub Pages
+4. **Your Apple ID signed in to App Store Connect** at least once at [appstoreconnect.apple.com](https://appstoreconnect.apple.com).
 
 ---
 
-## Phase 1: Pre-Flight Code Changes
+## Pre-Flight: One Small Code Change
 
-Before we build for production, the app needs a couple of changes. I can handle all of these in a session — just list them for me:
+Before the first build, the app's `app.json` needs an iOS bundle identifier. This is a string that uniquely identifies the app to Apple. I can make this change for you — just say the word. It would be:
 
-1. **Add iOS bundle identifier** to `app.json`:
-   ```json
-   "ios": {
-     "bundleIdentifier": "com.thejaeti.houselens",
-     ...
-   }
-   ```
+```json
+"ios": {
+  "bundleIdentifier": "com.thejaeti.houselens",
+  ...
+}
+```
 
-2. **Remove debug readouts** (the `pitch: XX°` text on the camera screen)
+That's it. Everything else (camera, location, motion permission descriptions) is already in place.
 
-3. **Bump version number** in `app.json` to `1.0.0` (or whatever the launch version is)
-
-4. **Decide on the Drive tab for v1**:
-   - **Option A:** Ship it with demo data + a clear banner explaining listings are for demonstration only. Risk: Apple reviewer might flag it as incomplete.
-   - **Option B:** Hide the Drive tab in v1, ship it in v2 once we have real listing data wired up. Safer for initial review.
-   - **Recommendation:** Option B — ship a focused v1 and add Drive mode in v1.1
-
-5. **Decide on AR overlay for v1**:
-   - If the vertical positioning is still glitchy, hide the feature behind a toggle or disable it
-   - Reviewers will test it
-
-6. **Make sure all URLs in the app work** — tap every button in every flow on a fresh install and confirm nothing crashes
+For TestFlight with internal testers, you can leave the debug `pitch: XX°` readout and the demo listings banner as-is — they're fine for internal testing. If you decide to move to external testers later, we might want to clean those up for the beta review.
 
 ---
 
-## Phase 2: Apple Developer Setup
+## Phase 1: Create the App Record in App Store Connect
 
-On Zack's wife's Apple Developer account (or via the team member she added):
+One-time setup. Takes about 10 minutes.
 
 1. Go to [App Store Connect](https://appstoreconnect.apple.com) → **My Apps** → **+** → **New App**
-
 2. Fill in:
-   - **Platform:** iOS
-   - **Name:** `HouseLens` (if taken, try "HouseLens — Home Finder" or similar)
+   - **Platforms:** iOS
+   - **Name:** `HouseLens` (if taken, try a variant — this is the name that appears in TestFlight)
    - **Primary Language:** English (US)
-   - **Bundle ID:** `com.thejaeti.houselens` (must match what's in `app.json`)
+   - **Bundle ID:** `com.thejaeti.houselens` (must exactly match `app.json`)
    - **SKU:** anything unique, e.g., `HOUSELENS001`
    - **User Access:** Full Access
-
-3. Once created, you'll get to the app's page. Set up:
-   - **App Information:**
-     - Category: Lifestyle (primary), Navigation (secondary)
-     - Content Rights: No third-party content (or declare what Zillow/Redfin/Realtor refs are)
-   - **Pricing and Availability:**
-     - Price: Free
-     - Available in: All countries (or just US to start)
-   - **App Privacy:** fill out the privacy questionnaire. Key disclosures:
-     - Location data collected (in-app use, not linked to user, not tracked)
-     - Camera data (not collected — only used live)
-     - Device motion (not collected)
-   - **Version 1.0** metadata:
-     - **Description:** 3–4 paragraphs explaining what the app does
-     - **Keywords:** real estate, home finder, zillow, house search, map, AR, street view
-     - **Support URL:** can be a simple GitHub page
-     - **Marketing URL:** optional
-     - **Screenshots:** need at minimum one set at 6.7" (iPhone 15 Pro Max) and 6.5" (iPhone 11 Pro Max). Six screenshots each, showing key features.
+3. Click **Create**. You're done with this step. You don't need to fill in any of the App Store metadata (description, screenshots, etc.) — those are only for public App Store listing, not TestFlight.
 
 ---
 
-## Phase 3: Build with EAS
+## Phase 2: Build and Upload
 
-Once everything above is ready:
+From your Terminal on your Mac:
 
 ```bash
 cd "/Users/jonathanroberts/Documents/Claude Code Projects/Real Estate:Zillow App/HouseLens"
 
-# First-time iOS setup — EAS will prompt you to sign in to your Apple Developer account
-# and create certificates + provisioning profiles automatically
+# First build. EAS will prompt you for Apple credentials and
+# automatically create signing certificates and provisioning profiles.
 eas build --platform ios --profile production
 ```
 
-What happens:
-1. EAS will ask for Apple Developer credentials — use the account Zack's wife added you to
-2. EAS creates the signing certificates and provisioning profiles on your behalf (saved in your Expo account)
-3. Your code is uploaded and built on Expo's servers (~15–25 minutes)
-4. When done, EAS gives you a URL to download the `.ipa` file (the iOS app bundle)
+**What happens:**
+- You'll be prompted for your Apple ID and password (the one on Zach's wife's team)
+- EAS asks for the Apple Team ID — Zach's wife can find it in her developer portal (looks like `A1B2C3D4E5`)
+- EAS creates certificates automatically and stores them in your Expo account
+- Your code uploads to Expo's servers and builds (~15–25 minutes)
+- When done, EAS gives you a URL to the built `.ipa` file
 
-**If the build fails**, EAS will show the error. Common issues:
-- Bundle identifier mismatch → check `app.json` matches App Store Connect
-- Missing Apple team ID → EAS will prompt for it
-- Package version mismatches (we saw these warnings earlier) → usually non-blocking but can update if needed
-
----
-
-## Phase 4: Submit with EAS
-
-Once the build succeeds:
+Then upload that build to App Store Connect:
 
 ```bash
 eas submit --platform ios --latest
 ```
 
-EAS uploads the `.ipa` to App Store Connect automatically. After 5–10 minutes it'll appear under the **TestFlight** tab of your app in App Store Connect.
-
-### Test it via TestFlight first (strongly recommended)
-- TestFlight lets you install the production build on your phones before submitting to Apple's review
-- Add yourself, Zack, and Zack's wife as internal testers
-- Actually use the app for a few days to catch bugs
-- Fix anything that turns up, rebuild, re-upload
-- **Don't skip this step** — it's way cheaper to find bugs here than during Apple's review
-
-### Submit for review
-- In App Store Connect → your app → **1.0 Prepare for Submission**
-- Choose the build you want to submit (from TestFlight)
-- Fill in **Export Compliance** (almost always: "No, my app doesn't use encryption beyond standard HTTPS")
-- Fill in **App Review Information:**
-  - Contact info
-  - Demo account if needed (HouseLens doesn't need one)
-  - Notes: brief explanation of the app's features for the reviewer
-- Hit **Submit for Review**
+This takes 5–10 minutes. Afterward, the build appears under **TestFlight** tab in App Store Connect.
 
 ---
 
-## Phase 5: Apple Review
+## Phase 3: Invite Testers
 
-- Apple's review takes **1–3 business days** typically
-- They will test the app on real devices
-- You may get a rejection with reasons — common ones for an app like HouseLens:
-  - *"We couldn't find the features described"* → fix the description or add missing features
-  - *"Location usage description is vague"* → make your `NSLocationWhenInUseUsageDescription` more specific
-  - *"Demo data visible to users without clear disclosure"* → this is why I suggest hiding Drive mode in v1
-  - *"Minimal functionality"* → add more user-facing polish
-- If rejected, you read their notes, fix the issue, re-submit. No penalty.
+### Option A — Internal Testers (instant, recommended to start)
 
-Once approved: the app goes live on the App Store automatically (or at a scheduled release date you set).
+1. In App Store Connect → your app → **TestFlight** tab
+2. Under **Internal Testing**, click **+** to create an internal group (e.g., "Core Team")
+3. Click **Add Testers** → pick from the list of people on the App Store Connect team
+4. Assign the latest build to this group
+5. Testers get an email with a **View in TestFlight** link
+6. They tap it on their iPhone → opens TestFlight app (they'll install it if they don't have it) → tap **Install** → HouseLens appears on their home screen
 
----
+### Option B — External Testers (after beta review)
 
-## Post-Launch: Future Updates
+1. In App Store Connect → your app → **TestFlight** tab
+2. Under **External Testing**, click **+** to create an external group
+3. Add testers by email (they don't need to be on your team)
+4. Assign the latest build to the group
+5. First time per version: Apple reviews the build (~24 hours, sometimes faster)
+6. After approval, testers get the email invite and install exactly like internal testers
 
-Two types of updates are possible:
-
-### EAS Updates (JavaScript-only changes) — instant, no Apple review
-- You're already using EAS Update for your Expo Go workflow
-- After launch, pushing a new `eas update --branch main` delivers fresh JavaScript to users' phones on next app open
-- Good for bug fixes, copy changes, small tweaks
-- **Cannot** change native code, permissions, or app icon
-
-### Full binary updates — for bigger changes
-- Bump version in `app.json` (e.g., 1.0.0 → 1.1.0)
-- `eas build --platform ios --profile production`
-- `eas submit --platform ios --latest`
-- Goes through Apple review again (usually faster for updates, 1–2 days)
-- Needed when: adding new permissions, changing app icon, native module updates, big new features
+External testing needs a few extra fields filled in for Apple's reviewer:
+- **What to test:** brief notes for the beta reviewer
+- **Beta App Description:** one paragraph about what the app does
+- **Feedback email:** where beta testers can send feedback
+- **Test Information:** login credentials if needed (HouseLens doesn't need any)
 
 ---
 
-## Rough Timeline
+## Pushing Updates
+
+Two scenarios:
+
+### You changed JavaScript/UI only (most changes)
+Your current EAS Update workflow still works — `eas update --branch main --message "..."`. But TestFlight builds don't pick up EAS Updates the same way Expo Go does (runtime version mismatch). So for TestFlight, you'll mostly use:
+
+### Full build updates (any change)
+```bash
+# Bump the version in app.json first (e.g., 1.0.0 → 1.0.1)
+eas build --platform ios --profile production
+eas submit --platform ios --latest
+```
+
+- Internal testers get the new build within minutes (no review)
+- External testers: if it's a patch of the same version (1.0.x), no review needed. If it's a new version (1.1.0+), another ~24hr beta review.
+
+When testers open TestFlight on their phone, they'll see "Update" next to HouseLens.
+
+---
+
+## Rough Timeline From Zero to Apps-On-Phones
 
 | Step | Time |
 |---|---|
-| Pre-flight code changes | 1 session with me |
-| Privacy policy + hosting | 1–2 hours |
-| Apple Developer team access | depends on Zack's wife's availability |
-| App Store Connect metadata + screenshots | 2–4 hours |
-| First EAS build | 30 min (with troubleshooting) |
-| TestFlight testing | 3–7 days of real use |
-| Submit for review | 15 min |
-| Apple review | 1–3 business days |
-| **Total** | **~2–4 weeks** |
+| Zach's wife adds you both to her team | Depends on her |
+| Pre-flight code change (bundle ID) | ~2 minutes with me |
+| Create app record in App Store Connect | 10 minutes |
+| First EAS build | 20–30 minutes (mostly waiting) |
+| First EAS submit | 10 minutes |
+| Invite internal testers + install | 5 minutes |
+| **Total (if Zach's wife is responsive)** | **~1–2 hours of work spread over a few hours** |
+
+Add ~24 hours on top if you want external testers for anyone outside the Apple Developer team.
 
 ---
 
-## Open Questions for You and Zack
+## Quick Open Questions
 
-Before we start, decide these:
+Just a handful to decide before we start. Nothing huge:
 
-1. **App name on the store** — stick with "HouseLens" or try something else?
-2. **Drive tab in v1** — ship with demo banner, or hide until v1.1?
-3. **AR overlay in v1** — ship as-is, finish the pitch fix first, or hide?
-4. **Pricing** — free, paid, or free-with-IAP?
-5. **Target audience** — US only, or worldwide?
-6. **Privacy policy** — who's writing it? (I can help draft)
-7. **Support email/URL** — what to list in App Store Connect?
+1. **Are you and Zach okay being added to Zach's wife's Apple Developer team** (she'll see that you're both developers on her account)?
+2. **Start with internal testing only** (just you two)? Or add a few friends externally from the start?
+3. **App name** — keep "HouseLens"? It only shows up in TestFlight/on the home screen for your testers, but if you ever go public with the same name you'd want it unclaimed.
+4. **Want me to make the pre-flight code change** (adding the iOS bundle identifier) right now?
 
-When you're ready to start, tell me which items you've decided on and I'll run through the pre-flight code changes with you.
+When you're ready, just answer #4 and I'll do the code change. Then you can run through the steps with Zach's wife at your own pace.
