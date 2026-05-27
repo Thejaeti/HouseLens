@@ -7,7 +7,10 @@ import { PLATFORMS, openPlatform } from "../utils/listingUrls";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const CAMERA_FOV_H = 65; // horizontal FOV in degrees
-const CAMERA_FOV_V = 60; // vertical FOV in degrees
+const CAMERA_FOV_V = 50; // vertical FOV in degrees (effective for tall iPhone portrait screen)
+// Focal lengths derived from FOV — computed once, not per-frame.
+const FOCAL_H = (SCREEN_WIDTH / 2) / Math.tan((CAMERA_FOV_H / 2) * Math.PI / 180);
+const FOCAL_V = (SCREEN_HEIGHT / 2) / Math.tan((CAMERA_FOV_V / 2) * Math.PI / 180);
 const MAX_DISTANCE = 500;
 const CARD_HEIGHT = 90; // approximate height of a label card
 const MIN_CARD_GAP = 10;
@@ -50,22 +53,20 @@ export function AROverlay({ userCoords, heading, pitch, savedHouses }: AROverlay
     )
     .sort((a, b) => b.distance - a.distance)
     .map(({ house, distance, relativeBearing }) => {
-      // Horizontal position from bearing
-      const screenX =
-        (relativeBearing / halfFovH) * (SCREEN_WIDTH / 2) + SCREEN_WIDTH / 2;
+      // Pinhole camera projection. FOCAL_H / FOCAL_V are module-level constants.
+      const screenX = SCREEN_WIDTH / 2 + FOCAL_H * Math.tan(relativeBearing * Math.PI / 180);
 
-      // Vertical position from pitch
-      // pitch > 0 = phone tilted up → houses move down on screen
-      // pitch < 0 = phone tilted down → houses move up on screen
-      // Scale: each degree of pitch moves the label proportionally across the screen
-      const pixelsPerDegree = SCREEN_HEIGHT / CAMERA_FOV_V;
-      const verticalOffset = pitch * pixelsPerDegree * 1.4;
-      const baseY = SCREEN_HEIGHT * 0.5 + verticalOffset;
+      // House is at ground level (elevation ≈ 0°).
+      // Angle from the camera's pointing direction to the house, vertically:
+      //   dV > 0 → house is above camera center
+      //   dV < 0 → house is below camera center
+      // Clamp pitch so tan() stays well-behaved when phone is nearly flat.
+      const clampedPitch = Math.max(-70, Math.min(70, pitch));
+      const dV = 0 - clampedPitch; // house elevation (0°) minus camera elevation
+      // Screen Y increases downward, so higher elevation = subtract.
+      const screenY = SCREEN_HEIGHT / 2 - FOCAL_V * Math.tan(dV * Math.PI / 180);
 
-      // Closer houses slightly lower on screen
       const distanceFactor = Math.min(distance / MAX_DISTANCE, 1);
-      const screenY = baseY + (1 - distanceFactor) * 20;
-
       const scale = 0.8 + (1 - distanceFactor) * 0.4;
 
       return { house, distance, screenX, screenY, scale };

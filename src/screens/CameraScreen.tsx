@@ -11,6 +11,7 @@ import { CompassHeading } from "../components/CompassHeading";
 import { DistanceSlider } from "../components/DistanceSlider";
 import { LookupButton } from "../components/LookupButton";
 import { AROverlay } from "../components/AROverlay";
+import { AddressCard } from "../components/AddressCard";
 import { LookupResult } from "../types";
 import { SavedHouse } from "../hooks/useSavedHouses";
 
@@ -21,9 +22,10 @@ interface CameraScreenProps {
   onSave?: (result: LookupResult) => void;
   isSaved?: (address: string) => boolean;
   savedHouses?: SavedHouse[];
+  autoLookup?: boolean;
 }
 
-export function CameraScreen({ onSave, isSaved, savedHouses = [] }: CameraScreenProps) {
+export function CameraScreen({ onSave, isSaved, savedHouses = [], autoLookup = false }: CameraScreenProps) {
   const [distance, setDistance] = useState(DEFAULT_DISTANCE);
   const { coords } = useLocation();
   const { heading } = useCompassHeading();
@@ -59,8 +61,9 @@ export function CameraScreen({ onSave, isSaved, savedHouses = [] }: CameraScreen
   }, [heading, canLookup, state.status]);
 
   useEffect(() => {
-    if (!canLookup || state.status === "loading" || state.status === "success") {
+    if (!autoLookup || !canLookup || state.status === "loading" || state.status === "success") {
       if (timerRef.current) clearInterval(timerRef.current);
+      setAutoProgress(0);
       return;
     }
 
@@ -79,7 +82,7 @@ export function CameraScreen({ onSave, isSaved, savedHouses = [] }: CameraScreen
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [canLookup, state.status, coords, distance]);
+  }, [autoLookup, canLookup, state.status, coords, distance]);
 
   return (
     <View style={styles.container}>
@@ -94,6 +97,13 @@ export function CameraScreen({ onSave, isSaved, savedHouses = [] }: CameraScreen
         </View>
 
         <View style={styles.bottomSection} pointerEvents="box-none">
+          <AddressCard
+            state={state}
+            onDismiss={reset}
+            onSave={onSave}
+            isSaved={state.status === "success" ? isSaved?.(state.result.address) : false}
+          />
+
           <DistanceSlider distance={distance} onDistanceChange={setDistance} />
 
           <View style={styles.buttonRow}>
