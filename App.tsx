@@ -12,6 +12,7 @@ import { CameraScreen } from "./src/screens/CameraScreen";
 import { SavedHousesScreen } from "./src/screens/SavedHousesScreen";
 import { MapScreen } from "./src/screens/MapScreen";
 import { DriveScreen } from "./src/screens/DriveScreen";
+import { YardSignScreen } from "./src/screens/YardSignScreen";
 import { SettingsScreen } from "./src/screens/SettingsScreen";
 import { useSavedHouses } from "./src/hooks/useSavedHouses";
 import { useSettings } from "./src/hooks/useSettings";
@@ -106,6 +107,18 @@ export default function App() {
             </>
           )}
         </Tab.Screen>
+        <Tab.Screen
+          name="YardSigns"
+          options={{
+            tabBarLabel: "Yard Signs",
+            tabBarIcon: ({ color, size }) => (
+              <Text style={{ fontSize: size, color }}>🪧</Text>
+            ),
+            headerShown: true,
+            headerTitle: "Yard Signs",
+          }}
+          component={YardSignScreen}
+        />
         <Tab.Screen
           name="Saved"
           options={{
