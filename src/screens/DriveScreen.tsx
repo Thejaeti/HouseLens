@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { WebView, WebViewMessageEvent } from "react-native-webview";
 import { useLocation } from "../hooks/useLocation";
-import { useCompassHeading } from "../hooks/useCompassHeading";
 import { Coords } from "../types";
 import {
   NEIGHBORHOOD_PROPERTIES,
@@ -126,9 +125,14 @@ function buildMapHtml(
         address: p.address,
         town: p.town,
         fullAddress: p.fullAddress,
-        line1: fmtBedBath(p),
-        line2: fmtSqft(p),
-        line3: fmtValue(p.estimatedValue),
+        bedbath: (() => {
+          const parts: string[] = [];
+          if (p.beds !== null) parts.push(`${p.beds} bd`);
+          if (p.baths !== null) parts.push(`${p.baths} ba`);
+          return parts.join(" · ");
+        })(),
+        sqft_str: p.sqft !== null ? `${p.sqft.toLocaleString()} sqft` : "",
+        value: fmtValue(p.estimatedValue),
         detail: fmtDetail(p),
       };
     })
@@ -155,10 +159,30 @@ function buildMapHtml(
       padding: 10px 12px;
       font-family: -apple-system, system-ui, sans-serif;
     }
+    #recenter-btn {
+      display: none;
+      position: absolute;
+      bottom: 36px;
+      right: 12px;
+      z-index: 100;
+      background: rgba(0,0,0,0.72);
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      padding: 8px 14px;
+      font-family: -apple-system, system-ui, sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      align-items: center;
+      gap: 5px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+    }
   </style>
 </head>
 <body>
   <div id="map"></div>
+  <button id="recenter-btn">📍 My Location</button>
   <script>
     function sendMsg(platform, address) {
       window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'openPlatform', platform: platform, address: address }));
@@ -183,10 +207,10 @@ function buildMapHtml(
     // bytes) is the most reliable format for map.addImage() inside WKWebView —
     // passing an HTMLCanvasElement directly can silently fail in some contexts.
     var DPR = Math.min(window.devicePixelRatio || 2, 3);
-    // Logical pixel dimensions — panel is 4:3 (80 × 60), stake below.
-    var SW = 80, SH_HEAD = 22, SH_BODY = 38, SH_STAKE = 8;
-    var SH_PANEL = SH_HEAD + SH_BODY;          // 60  (= SW × 3/4)
-    var SH = SH_PANEL + SH_STAKE;             // 68
+    // Logical pixel dimensions — roughly proportional to the AR overlay card.
+    var SW = 90, SH_HEAD = 26, SH_BODY = 18, SH_STAKE = 8;
+    var SH_PANEL = SH_HEAD + SH_BODY;          // 44
+    var SH = SH_PANEL + SH_STAKE;             // 52
 
     // Shrinks ctx.font until the text fits inside maxW, down to minSz pt.
     function fitText(ctx, text, maxW, maxSz, minSz, bold) {
@@ -198,6 +222,41 @@ function buildMapHtml(
       }
     }
 
+    // Draws a mixed-colour stats row (bed/bath · sqft · value) on one line,
+    // matching the camera-tab AddressCard stats row exactly.
+    function drawStatsRow(ctx, p, y, maxW) {
+      var div = ' · ';
+      var segs = [];
+      if (p.bedbath) segs.push({ t: p.bedbath, c: '#ffffff' });
+      if (p.sqft_str) {
+        if (segs.length) segs.push({ t: div, c: 'rgba(255,255,255,0.4)' });
+        segs.push({ t: p.sqft_str, c: '#ffffff' });
+      }
+      if (p.value && p.value !== '$$$') {
+        if (segs.length) segs.push({ t: div, c: 'rgba(255,255,255,0.4)' });
+        segs.push({ t: p.value, c: '#ff6b6b' });
+      }
+      if (!segs.length) return;
+      // Shrink font until the full row fits
+      var sz = 9;
+      var measureTotal = function() {
+        ctx.font = sz + 'px Arial, sans-serif';
+        return segs.reduce(function(w, s) { return w + ctx.measureText(s.t).width; }, 0);
+      };
+      while (measureTotal() > maxW && sz > 4) sz -= 0.5;
+      ctx.font = sz + 'px Arial, sans-serif';
+      var totalW = segs.reduce(function(w, s) { return w + ctx.measureText(s.t).width; }, 0);
+      var x = SW / 2 - totalW / 2;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      segs.forEach(function(s) {
+        ctx.fillStyle = s.c;
+        ctx.fillText(s.t, x, y);
+        x += ctx.measureText(s.t).width;
+      });
+      ctx.textAlign = 'center'; // restore default
+    }
+
     function makeSignImage(p) {
       var PW = Math.round(SW * DPR);
       var PH = Math.round(SH * DPR);
@@ -207,7 +266,7 @@ function buildMapHtml(
       ctx.scale(DPR, DPR);
 
       // ── Card shape — rounded corners, clipped so header inherits them ──────
-      var R = 4; // corner radius (proportional to AR card's borderRadius:10 at 180px)
+      var R = 4; // corner radius
       ctx.save();
       ctx.beginPath();
       ctx.moveTo(R, 0);
@@ -244,23 +303,15 @@ function buildMapHtml(
       var H1 = SH_HEAD * 0.38;
       var H2 = SH_HEAD * 0.78;
       ctx.fillStyle = '#ffffff';
-      fitText(ctx, p.address, TW, 9, 5, true);
+      fitText(ctx, p.address, TW, 10, 6, true);
       ctx.fillText(p.address, SW / 2, H1);
       ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      fitText(ctx, p.town, TW, 7, 5, false);
+      fitText(ctx, p.town, TW, 8, 5, false);
       ctx.fillText(p.town, SW / 2, H2);
 
-      // Body: 3 zones — white stats then coral-red value, matching AR card colours
-      var B0 = SH_HEAD;
-      var BZ = SH_BODY / 3;
-      ctx.fillStyle = '#ffffff';
-      fitText(ctx, p.line1, TW, 8, 5, false);
-      ctx.fillText(p.line1, SW / 2, B0 + BZ * 0.5);
-      fitText(ctx, p.line2, TW, 8, 5, false);
-      ctx.fillText(p.line2, SW / 2, B0 + BZ * 1.5);
-      ctx.fillStyle = '#ff6b6b'; // statValue colour from AR card
-      fitText(ctx, p.line3, TW, 9, 5, true);
-      ctx.fillText(p.line3, SW / 2, B0 + BZ * 2.5);
+      // Body: single stats row — bed/bath · sqft · value on one line,
+      // matching the camera-tab AddressCard layout (value in coral #ff6b6b).
+      drawStatsRow(ctx, p, SH_HEAD + SH_BODY / 2, TW);
 
       // Return raw RGBA bytes — most reliable input for map.addImage()
       return ctx.getImageData(0, 0, PW, PH);
@@ -292,9 +343,7 @@ function buildMapHtml(
             iconId: id,
             address: p.address,
             fullAddress: p.fullAddress,
-            line1: p.line1,
-            line2: p.line2,
-            line3: p.line3,
+            value: p.value,
             detail: p.detail,
           },
         });
@@ -324,8 +373,8 @@ function buildMapHtml(
         if (!e.features || !e.features.length) return;
         var p = e.features[0].properties;
         var coords = e.features[0].geometry.coordinates;
-        var valueHtml = (p.line3 !== '$$$')
-          ? '<div style="font-size:14px;color:#222;font-weight:600;margin-bottom:2px;">' + p.line3 + '</div>'
+        var valueHtml = (p.value !== '$$$')
+          ? '<div style="font-size:14px;color:#222;font-weight:600;margin-bottom:2px;">' + p.value + '</div>'
           : '';
         var html =
           '<div style="min-width:190px;">' +
@@ -356,13 +405,33 @@ function buildMapHtml(
       map.on('mouseleave', 'signs-layer', function() { map.getCanvas().style.cursor = ''; });
     });
 
-    // Pan + rotate the map to follow GPS position and compass heading.
-    // Symbol-layer signs are GPU-rendered with the map tiles, so they stay
-    // locked to their geographic coordinates even as the map rotates —
-    // unlike the old DOM markers which orbited the screen centre.
-    window.followUser = function(lat, lon, bearing) {
-      map.easeTo({ center: [lon, lat], bearing: bearing, duration: 400 });
+    // GPS tracking — update the blue dot only, never auto-pan the map.
+    var gpsLat = ${initial.lat}, gpsLon = ${initial.lon};
+
+    function haversineM(la1, lo1, la2, lo2) {
+      var R = 6371000, toRad = function(d) { return d * Math.PI / 180; };
+      var dLa = toRad(la2 - la1), dLo = toRad(lo2 - lo1);
+      var a = Math.sin(dLa/2)*Math.sin(dLa/2) +
+              Math.cos(toRad(la1))*Math.cos(toRad(la2))*Math.sin(dLo/2)*Math.sin(dLo/2);
+      return 2 * R * Math.asin(Math.sqrt(a));
+    }
+
+    function checkRecenter() {
+      var c = map.getCenter();
+      var dist = haversineM(gpsLat, gpsLon, c.lat, c.lng);
+      document.getElementById('recenter-btn').style.display = dist > 50 ? 'flex' : 'none';
+    }
+
+    map.on('moveend', checkRecenter);
+
+    document.getElementById('recenter-btn').addEventListener('click', function() {
+      map.easeTo({ center: [gpsLon, gpsLat], duration: 600 });
+    });
+
+    window.followUser = function(lat, lon) {
+      gpsLat = lat; gpsLon = lon;
       if (window.userMarker) window.userMarker.setLngLat([lon, lat]);
+      checkRecenter();
     };
   <\/script>
 </body>
@@ -373,7 +442,6 @@ function buildMapHtml(
 
 export function DriveScreen() {
   const { coords } = useLocation();
-  const { heading } = useCompassHeading();
   const initialCoordsRef = useRef<Coords | null>(null);
   const webViewRef = useRef<WebView>(null);
 
@@ -384,11 +452,10 @@ export function DriveScreen() {
 
   useEffect(() => {
     if (!coords || !webViewRef.current) return;
-    const bearing = heading ?? 0;
     webViewRef.current.injectJavaScript(
-      `if (window.followUser) { window.followUser(${coords.lat}, ${coords.lon}, ${bearing}); } true;`
+      `if (window.followUser) { window.followUser(${coords.lat}, ${coords.lon}); } true;`
     );
-  }, [coords, heading]);
+  }, [coords]);
 
   const handleMessage = (event: WebViewMessageEvent) => {
     try {
