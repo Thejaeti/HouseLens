@@ -99,6 +99,7 @@ export default function App() {
             <>
               <CameraScreen
                 onSave={saveHouse}
+                onRemove={removeHouse}
                 isSaved={isSaved}
                 savedHouses={savedHouses}
                 autoLookup={settings.autoLookup}

@@ -18,6 +18,7 @@ interface AddressCardProps {
   state: LookupState;
   onDismiss: () => void;
   onSave?: (result: LookupResult) => void;
+  onRemove?: (address: string) => void;
   isSaved?: boolean;
 }
 
@@ -89,7 +90,7 @@ function splitAddress(address: string): { street: string; city: string } {
 
 // ── component ─────────────────────────────────────────────────────────────────
 
-export function AddressCard({ state, onDismiss, onSave, isSaved }: AddressCardProps) {
+export function AddressCard({ state, onDismiss, onSave, onRemove, isSaved }: AddressCardProps) {
   if (state.status === "idle") return null;
 
   if (state.status === "loading") {
@@ -116,9 +117,13 @@ export function AddressCard({ state, onDismiss, onSave, isSaved }: AddressCardPr
   const property = findProperty(address);
   const { street, city } = splitAddress(address);
 
-  const handleSave = async () => {
+  const handleHeartPress = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onSave?.(state.result);
+    if (isSaved) {
+      onRemove?.(address);
+    } else {
+      onSave?.(state.result);
+    }
   };
 
   return (
@@ -136,7 +141,7 @@ export function AddressCard({ state, onDismiss, onSave, isSaved }: AddressCardPr
             </Text>
           )}
         </View>
-        <TouchableOpacity onPress={handleSave} style={styles.heartButton}>
+        <TouchableOpacity onPress={handleHeartPress} style={styles.heartButton}>
           <Text style={styles.heartText}>{isSaved ? "♥" : "♡"}</Text>
         </TouchableOpacity>
       </View>

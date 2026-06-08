@@ -20,12 +20,13 @@ const HEADING_THRESHOLD = 8;
 
 interface CameraScreenProps {
   onSave?: (result: LookupResult) => void;
+  onRemove?: (address: string) => void;
   isSaved?: (address: string) => boolean;
   savedHouses?: SavedHouse[];
   autoLookup?: boolean;
 }
 
-export function CameraScreen({ onSave, isSaved, savedHouses = [], autoLookup = false }: CameraScreenProps) {
+export function CameraScreen({ onSave, onRemove, isSaved, savedHouses = [], autoLookup = false }: CameraScreenProps) {
   const [distance, setDistance] = useState(DEFAULT_DISTANCE);
   const { coords } = useLocation();
   const { heading } = useCompassHeading();
@@ -101,6 +102,7 @@ export function CameraScreen({ onSave, isSaved, savedHouses = [], autoLookup = f
             state={state}
             onDismiss={reset}
             onSave={onSave}
+            onRemove={onRemove}
             isSaved={state.status === "success" ? isSaved?.(state.result.address) : false}
           />
 
