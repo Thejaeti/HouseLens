@@ -46,8 +46,8 @@ function splitAddress(address: string): { street: string; city: string } {
   const parts = address.split(",").map((s) => s.trim()).filter(Boolean);
   if (parts.length === 0) return { street: address, city: "" };
   const firstIsNumOnly = /^\d+$/.test(parts[0]);
-  if (firstIsNumOnly && parts.length >= 3) {
-    return { street: `${parts[0]} ${parts[1]}`, city: parts[2] };
+  if (firstIsNumOnly && parts.length >= 2) {
+    return { street: `${parts[0]} ${parts[1]}`, city: parts[2] ?? "" };
   }
   return { street: parts[0], city: parts[1] ?? "" };
 }
@@ -195,9 +195,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 12,
     overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 3,
     elevation: 2,
     marginBottom: 12,
