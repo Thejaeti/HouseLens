@@ -183,10 +183,10 @@ function buildMapHtml(
     // bytes) is the most reliable format for map.addImage() inside WKWebView —
     // passing an HTMLCanvasElement directly can silently fail in some contexts.
     var DPR = Math.min(window.devicePixelRatio || 2, 3);
-    // Logical pixel dimensions — panel is 4:3 (64 × 48), stake below.
-    var SW = 64, SH_HEAD = 18, SH_BODY = 30, SH_STAKE = 6;
-    var SH_PANEL = SH_HEAD + SH_BODY;          // 48  (= SW × 3/4)
-    var SH = SH_PANEL + SH_STAKE;             // 54
+    // Logical pixel dimensions — panel is 4:3 (80 × 60), stake below.
+    var SW = 80, SH_HEAD = 22, SH_BODY = 38, SH_STAKE = 8;
+    var SH_PANEL = SH_HEAD + SH_BODY;          // 60  (= SW × 3/4)
+    var SH = SH_PANEL + SH_STAKE;             // 68
 
     // Shrinks ctx.font until the text fits inside maxW, down to minSz pt.
     function fitText(ctx, text, maxW, maxSz, minSz, bold) {
@@ -210,42 +210,45 @@ function buildMapHtml(
       // Red header (top SH_HEAD px)
       ctx.fillStyle = '#d62828';
       ctx.fillRect(0, 0, SW, SH_HEAD);
-      // White body (next SH_BODY px)
-      ctx.fillStyle = '#ffffff';
+      // Dark body — matches camera-tab card style
+      ctx.fillStyle = '#1e1e1e';
       ctx.fillRect(0, SH_HEAD, SW, SH_BODY);
-      // Border around the sign panel only (not the stake)
-      ctx.strokeStyle = '#333333';
+      // Subtle border around the sign panel
+      ctx.strokeStyle = 'rgba(255,255,255,0.15)';
       ctx.lineWidth = 1;
       ctx.strokeRect(0.5, 0.5, SW - 1, SH_PANEL - 1);
       // Stake post
-      ctx.fillStyle = '#555555';
+      ctx.fillStyle = '#888888';
       ctx.fillRect(SW / 2 - 1, SH_PANEL, 2, SH_STAKE);
 
       // ── Text ───────────────────────────────────────────────────────────────
-      var TW = SW - 6;      // max text width (3 px padding each side)
+      var TW = SW - 8;      // max text width (4 px padding each side)
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
-      // Red header: 2 equal zones of 9 px each
+      // Red header: address in top zone, town in bottom zone
+      var H1 = SH_HEAD * 0.38;   // address centre  (~8.4 for SH_HEAD=22)
+      var H2 = SH_HEAD * 0.78;   // town centre     (~17.2 for SH_HEAD=22)
       ctx.fillStyle = '#ffffff';
-      fitText(ctx, p.address, TW, 7, 4, true);
-      ctx.fillText(p.address, SW / 2, 4.5);     // zone 1 centre
-      fitText(ctx, p.town,    TW, 6, 4, false);
-      ctx.fillText(p.town,    SW / 2, 13.5);    // zone 2 centre
+      fitText(ctx, p.address, TW, 9, 5, true);
+      ctx.fillText(p.address, SW / 2, H1);
+      fitText(ctx, p.town,    TW, 7, 5, false);
+      ctx.fillText(p.town,    SW / 2, H2);
 
-      // White body: 3 equal zones of 10 px each
-      var B0 = SH_HEAD;     // top of white body
-      ctx.fillStyle = '#111111';
-      // Line 1 — sqft  (p.line2)
-      fitText(ctx, p.line2, TW, 7, 4, false);
-      ctx.fillText(p.line2, SW / 2, B0 + 5);
-      // Line 2 — beds / baths  (p.line1)
-      fitText(ctx, p.line1, TW, 7, 4, false);
-      ctx.fillText(p.line1, SW / 2, B0 + 15);
-      // Line 3 — estimated value  (p.line3, in red)
-      ctx.fillStyle = '#cc0000';
-      fitText(ctx, p.line3, TW, 7, 4, true);
-      ctx.fillText(p.line3, SW / 2, B0 + 25);
+      // Dark body: 3 equal zones (SH_BODY / 3 ≈ 12.7 px each)
+      var B0 = SH_HEAD;
+      var BZ = SH_BODY / 3;
+      // Line 1 — beds / baths  (p.line1)
+      ctx.fillStyle = '#ffffff';
+      fitText(ctx, p.line1, TW, 8, 5, false);
+      ctx.fillText(p.line1, SW / 2, B0 + BZ * 0.5);
+      // Line 2 — sqft  (p.line2)
+      fitText(ctx, p.line2, TW, 8, 5, false);
+      ctx.fillText(p.line2, SW / 2, B0 + BZ * 1.5);
+      // Line 3 — estimated value  (p.line3, coral-red to match camera card)
+      ctx.fillStyle = '#ff6b6b';
+      fitText(ctx, p.line3, TW, 9, 5, true);
+      ctx.fillText(p.line3, SW / 2, B0 + BZ * 2.5);
 
       // Return raw RGBA bytes — most reliable input for map.addImage()
       return ctx.getImageData(0, 0, PW, PH);
