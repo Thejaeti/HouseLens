@@ -23,21 +23,31 @@ interface AddressCardProps {
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
-/** Normalize an address string for loose matching (lowercase, strip zip, collapse spaces). */
+/** Normalize: lowercase, strip zip, collapse commas/spaces to single space. */
 function normalizeAddr(s: string): string {
   return s
     .toLowerCase()
-    .replace(/\b\d{5}(-\d{4})?\b/g, "") // strip zip codes
+    .replace(/\b\d{5}(-\d{4})?\b/g, "")
     .replace(/[,\s]+/g, " ")
     .trim();
 }
 
+/**
+ * Match by house number + first word of street name only.
+ * This handles "Winterberry Lane" (Apple Maps) vs "Winterberry Ln" (our data),
+ * and avoids false positives on different streets.
+ */
 function findProperty(geocodedAddress: string): NeighborhoodProperty | null {
-  const needle = normalizeAddr(geocodedAddress);
+  const tokens = normalizeAddr(geocodedAddress).split(" ");
+  const houseNum = tokens[0];            // "43"
+  const streetWord = tokens[1] ?? "";    // "winterberry"
+  if (!houseNum || !streetWord) return null;
+
   return (
-    NEIGHBORHOOD_PROPERTIES.find((p) =>
-      needle.startsWith(normalizeAddr(p.fullAddress))
-    ) ?? null
+    NEIGHBORHOOD_PROPERTIES.find((p) => {
+      const pt = normalizeAddr(p.fullAddress).split(" ");
+      return pt[0] === houseNum && (pt[1] ?? "").startsWith(streetWord.slice(0, 5));
+    }) ?? null
   );
 }
 
@@ -58,19 +68,23 @@ function fmtValue(v: number | null): string {
   return `$${Math.round(v / 1000)}K`;
 }
 
-/** Split a full address string into street line and city/state line. */
-function splitAddress(address: string): { street: string; cityState: string } {
-  const commaIdx = address.indexOf(",");
-  if (commaIdx === -1) return { street: address, cityState: "" };
-  const street = address.slice(0, commaIdx).trim();
-  // Take up to the next two comma-separated parts (city, state) — drop zip
-  const rest = address
-    .slice(commaIdx + 1)
-    .split(",")
-    .slice(0, 2)
-    .map((s) => s.trim())
-    .join(", ");
-  return { street, cityState: rest };
+/**
+ * Split geocoded address into street + city.
+ * Handles both "43 Winterberry Ln, Florence, MA" (combined)
+ * and "43, Winterberry Lane, Florence, MA, 01062" (iOS split) formats.
+ * No state shown.
+ */
+function splitAddress(address: string): { street: string; city: string } {
+  const parts = address.split(",").map((s) => s.trim()).filter(Boolean);
+  if (parts.length === 0) return { street: address, city: "" };
+
+  const firstIsNumOnly = /^\d+$/.test(parts[0]);
+  if (firstIsNumOnly && parts.length >= 3) {
+    // iOS format: ["43", "Winterberry Lane", "Florence", "MA", "01062"]
+    return { street: `${parts[0]} ${parts[1]}`, city: parts[2] };
+  }
+  // Combined format: ["43 Winterberry Ln", "Florence", "MA", ...]
+  return { street: parts[0], city: parts[1] ?? "" };
 }
 
 // ── component ─────────────────────────────────────────────────────────────────
@@ -100,7 +114,7 @@ export function AddressCard({ state, onDismiss, onSave, isSaved }: AddressCardPr
 
   const { address } = state.result;
   const property = findProperty(address);
-  const { street, cityState } = splitAddress(address);
+  const { street, city } = splitAddress(address);
 
   const handleSave = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -116,9 +130,9 @@ export function AddressCard({ state, onDismiss, onSave, isSaved }: AddressCardPr
           <Text style={styles.streetText} numberOfLines={1} adjustsFontSizeToFit>
             {street}
           </Text>
-          {cityState !== "" && (
+          {city !== "" && (
             <Text style={styles.cityStateText} numberOfLines={1}>
-              {cityState}
+              {city}
             </Text>
           )}
         </View>
