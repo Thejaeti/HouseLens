@@ -145,35 +145,48 @@ function buildMapHtml(
     /* ── strip Leaflet's default popup chrome ── */
     .leaflet-popup-content-wrapper {
       padding: 0;
-      border-radius: 10px;
+      border-radius: 16px;
       overflow: hidden;
       background: transparent;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
     }
     .leaflet-popup-content { margin: 0; width: auto !important; }
-    .leaflet-popup-close-button { color: rgba(255,255,255,0.8) !important; top: 4px !important; right: 6px !important; font-size: 18px !important; }
+    .leaflet-popup-close-button {
+      color: rgba(255,255,255,0.8) !important;
+      top: 6px !important; right: 8px !important;
+      font-size: 20px !important; font-weight: 400 !important;
+      line-height: 1 !important;
+    }
     .leaflet-popup-tip { background: #d62828; }
 
-    /* ── card ── */
-    .hl-card { width: 230px; font-family: -apple-system, sans-serif; }
+    /* ── card — matches camera tab AddressCard ── */
+    .hl-card { width: 280px; font-family: -apple-system, sans-serif; background: rgba(0,0,0,0.75); }
     .hl-header {
       background: #d62828;
-      padding: 10px 32px 10px 12px; /* right padding for close btn */
+      padding: 10px 32px 10px 14px; /* right room for X button */
+      display: flex; align-items: center; gap: 8px;
     }
-    .hl-street { color: #fff; font-size: 15px; font-weight: 700; line-height: 1.2; }
-    .hl-city   { color: rgba(255,255,255,0.85); font-size: 11px; margin-top: 2px; }
-    .hl-body   { background: #fff; padding: 10px 12px 12px; }
+    .hl-addr-block { flex: 1; min-width: 0; }
+    .hl-street { color: #fff; font-size: 17px; font-weight: 700; line-height: 1.2;
+                 white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hl-city   { color: rgba(255,255,255,0.85); font-size: 13px; margin-top: 2px; }
+    .hl-body   { padding: 10px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
     .hl-stats  {
-      display: flex; flex-wrap: wrap; align-items: center; gap: 5px;
-      font-size: 12px; color: #333; margin-bottom: 10px;
+      display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+      font-size: 14px;
     }
-    .hl-stat-div { color: #bbb; }
-    .hl-value    { color: #d62828; font-weight: 700; }
-    .hl-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+    .hl-stat-text { color: #fff; }
+    .hl-stat-div  { color: rgba(255,255,255,0.4); }
+    .hl-value     { color: #ff6b6b; font-weight: 700; }
+    .hl-view-label {
+      color: rgba(255,255,255,0.6); font-size: 12px; font-weight: 500;
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+    .hl-btns { display: flex; gap: 8px; }
     .hl-btn {
-      padding: 6px 10px; border-radius: 14px; border: none;
-      color: #fff; font-size: 11px; font-weight: 700;
-      cursor: pointer; text-decoration: none;
+      padding: 10px 14px; border-radius: 20px; border: none;
+      color: #fff; font-size: 13px; font-weight: 700;
+      cursor: pointer; white-space: nowrap;
     }
   </style>
 </head>
@@ -200,12 +213,12 @@ function buildMapHtml(
     function buildPopupHtml(d) {
       var statsHtml = '';
       var parts = [];
-      if (d.bedBath) parts.push('<span>' + d.bedBath + '</span>');
-      if (d.sqft)   parts.push('<span>' + d.sqft + '</span>');
+      if (d.bedBath) parts.push('<span class="hl-stat-text">' + d.bedBath + '</span>');
+      if (d.sqft)   parts.push('<span class="hl-stat-text">' + d.sqft + '</span>');
       if (d.value)  parts.push('<span class="hl-value">' + d.value + '</span>');
       if (parts.length > 0) {
         statsHtml = '<div class="hl-stats">' +
-          parts.join('<span class="hl-stat-div">·</span>') +
+          parts.join('<span class="hl-stat-div"> · </span>') +
           '</div>';
       }
 
@@ -216,11 +229,14 @@ function buildMapHtml(
 
       return '<div class="hl-card">' +
         '<div class="hl-header">' +
-          '<div class="hl-street">' + d.street + '</div>' +
-          (d.city ? '<div class="hl-city">' + d.city + '</div>' : '') +
+          '<div class="hl-addr-block">' +
+            '<div class="hl-street">' + d.street + '</div>' +
+            (d.city ? '<div class="hl-city">' + d.city + '</div>' : '') +
+          '</div>' +
         '</div>' +
         '<div class="hl-body">' +
           statsHtml +
+          '<div class="hl-view-label">View listing on:</div>' +
           '<div class="hl-btns">' + btnsHtml + '</div>' +
         '</div>' +
       '</div>';
@@ -230,7 +246,7 @@ function buildMapHtml(
     cardData.forEach(function(d) {
       L.marker([d.lat, d.lon], { icon: houseIcon })
         .addTo(map)
-        .bindPopup(buildPopupHtml(d), { maxWidth: 260, minWidth: 230 });
+        .bindPopup(buildPopupHtml(d), { maxWidth: 320, minWidth: 280 });
     });
 
     ${userInit}
