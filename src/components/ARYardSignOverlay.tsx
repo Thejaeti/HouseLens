@@ -27,12 +27,12 @@ const MAX_DISTANCE_M = 40;
 // Fixed card size — landscape 4:3 ratio, same dark style as Camera tab
 const CARD_W = 220;
 const CARD_H = 165; // 220 / (4/3) ≈ 165
-const PIN_HEIGHT = 16; // vertical pin above the card (same as AROverlay)
 
 const DEG = Math.PI / 180;
 
-// Sign centre is ~1.07 m off the ground (2 ft bottom + 1.5 ft to centre)
-const SIGN_CENTER_H_M = 1.067;
+// Sign top is ~1.4 m above ground — only 0.1 m below eye level, so it
+// projects near the centre of the camera frame at typical viewing angles.
+const SIGN_TOP_H_M = 1.4;
 const EYE_HEIGHT_M = 1.5;
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -129,8 +129,11 @@ export function ARYardSignOverlay({ userCoords, heading, pitch, properties }: Pr
         SCREEN_WIDTH / 2 + FOCAL_H * Math.tan(relH * DEG);
 
       // ── screen Y ──────────────────────────────────────────────────────────
-      // Sign centre is ~SIGN_CENTER_H_M above ground; camera is at ~EYE_HEIGHT_M
-      const heightDiff = SIGN_CENTER_H_M - EYE_HEIGHT_M; // ≈ -0.43 m
+      // Project the sign's top edge (≈ eye-level) to get the anchor point.
+      // screenY = where the top of the sign board appears on screen.
+      // Card hangs DOWN from this anchor (same pattern as AROverlay) so the
+      // card stays visible even when the phone is tilted slightly downward.
+      const heightDiff = SIGN_TOP_H_M - EYE_HEIGHT_M; // ≈ -0.1 m
       const vertAngle = Math.atan2(heightDiff, distance) / DEG;
       const dV = vertAngle - clampedPitch;
       const screenY =
@@ -147,8 +150,10 @@ export function ARYardSignOverlay({ userCoords, heading, pitch, properties }: Pr
   // Render far-to-near so closer signs appear on top
   entries.sort((a, b) => b.distance - a.distance);
 
+  // screenY is the top anchor; card hangs down ~(PIN_HEIGHT + CARD_H) below it.
+  // Keep a sign if any part of its card would be on screen.
   const visible = entries.filter(
-    (e) => e.screenY > -300 && e.screenY < SCREEN_HEIGHT + 100
+    (e) => e.screenY > -CARD_H && e.screenY < SCREEN_HEIGHT
   );
 
   if (visible.length === 0) return null;
@@ -167,22 +172,15 @@ export function ARYardSignOverlay({ userCoords, heading, pitch, properties }: Pr
               styles.wrapper,
               {
                 left: screenX - cardW / 2,
-                // screenY is the sign's AR anchor; pin sits above the card
-                top: screenY - PIN_HEIGHT * scale - cardH,
+                // screenY = top of sign board in camera frame;
+                // card hangs down from here (same pattern as AROverlay)
+                top: screenY,
                 width: cardW,
               },
             ]}
             pointerEvents="auto"
           >
-            {/* Vertical pin anchoring card to world position */}
-            <View
-              style={[
-                styles.pin,
-                { height: PIN_HEIGHT * scale },
-              ]}
-            />
-
-            {/* Card */}
+            {/* Card hangs down from the anchor */}
             <View style={[styles.card, { width: cardW, height: cardH }]}>
               {/* Line 1: address — town */}
               <Text style={styles.addressText} numberOfLines={1} adjustsFontSizeToFit>
@@ -233,11 +231,6 @@ const styles = StyleSheet.create({
   wrapper: {
     position: "absolute",
     alignItems: "center",
-  },
-  pin: {
-    width: 2,
-    backgroundColor: "rgba(74, 144, 217, 0.8)",
-    marginBottom: -1,
   },
   card: {
     backgroundColor: "rgba(0, 0, 0, 0.82)",
