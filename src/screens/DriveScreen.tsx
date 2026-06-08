@@ -11,7 +11,7 @@ import {
 import { PLATFORMS, openPlatform } from "../utils/listingUrls";
 
 const NEIGHBORHOOD_CENTER: Coords = { lat: 42.3070, lon: -72.6844 };
-const SIGN_SETBACK_M = 3.048; // 10 feet
+const SIGN_SETBACK_M = 7.62; // 25 feet
 
 // ── Geo helpers ──────────────────────────────────────────────────────────────
 
