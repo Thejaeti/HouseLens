@@ -44,6 +44,25 @@ export const WINTERBERRY_NODES: readonly [number, number][] = [
   [42.3076095, -72.6851635],
   [42.3076549, -72.6853450],
   [42.3076760, -72.6854808],
+  // Cul-de-sac loop — OSM way 9224878 continues here (nodes 60-96).
+  // The loop entrance is at [42.3076526, -72.6858148]; the way traces the
+  // loop clockwise and returns to the same node (96 nodes total).
+  [42.3076799, -72.6855920],
+  [42.3076679, -72.6857228],
+  [42.3076526, -72.6858148], // cul-de-sac entrance / loop junction
+  [42.3077146, -72.6858893],
+  [42.3077240, -72.6859452], // north apex
+  [42.3077160, -72.6860015],
+  [42.3076751, -72.6860663],
+  [42.3076353, -72.6860859], // west apex
+  [42.3075930, -72.6860821],
+  [42.3075393, -72.6860335],
+  [42.3075204, -72.6859805], // south apex
+  [42.3075175, -72.6859512],
+  [42.3075361, -72.6858675],
+  [42.3075879, -72.6858152],
+  [42.3076312, -72.6858087],
+  [42.3076526, -72.6858148], // back to loop junction (loop closed)
 ];
 
 export const BIRCH_NODES: readonly [number, number][] = [
@@ -59,7 +78,19 @@ export const BIRCH_NODES: readonly [number, number][] = [
   [42.3088000, -72.6834200],
   [42.3090375, -72.6833489],
   [42.3092190, -72.6833205],
-  [42.3093701, -72.6833647],
+  [42.3093701, -72.6833647], // cul-de-sac entrance / loop junction
+  // Cul-de-sac loop — OSM way 9226030 continues here (nodes 37-66).
+  // The loop traces clockwise and returns to [42.3093701, -72.6833647].
+  [42.3094556, -72.6832934], // east side
+  [42.3095152, -72.6833169],
+  [42.3095590, -72.6834392], // north apex
+  [42.3095474, -72.6834935],
+  [42.3094984, -72.6835545],
+  [42.3094542, -72.6835654], // west side
+  [42.3094110, -72.6835493],
+  [42.3093660, -72.6834829],
+  [42.3093580, -72.6834232],
+  [42.3093701, -72.6833647], // back to loop junction (loop closed)
 ];
 
 export const NEIGHBORHOOD_PROPERTIES: NeighborhoodProperty[] = [
