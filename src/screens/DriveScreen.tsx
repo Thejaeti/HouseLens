@@ -206,47 +206,59 @@ function buildMapHtml(
       var ctx = c.getContext('2d');
       ctx.scale(DPR, DPR);
 
-      // ── Panels ─────────────────────────────────────────────────────────────
-      // Red header (top SH_HEAD px)
+      // ── Card shape — rounded corners, clipped so header inherits them ──────
+      var R = 4; // corner radius (proportional to AR card's borderRadius:10 at 180px)
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(R, 0);
+      ctx.lineTo(SW - R, 0);
+      ctx.arcTo(SW, 0,      SW, R,        R);
+      ctx.lineTo(SW, SH_PANEL - R);
+      ctx.arcTo(SW, SH_PANEL, SW - R, SH_PANEL, R);
+      ctx.lineTo(R, SH_PANEL);
+      ctx.arcTo(0,  SH_PANEL, 0, SH_PANEL - R, R);
+      ctx.lineTo(0, R);
+      ctx.arcTo(0,  0, R, 0, R);
+      ctx.closePath();
+      ctx.clip();
+
+      // Dark body — rgba(0,0,0,0.75) matches AR card backgroundColor exactly
+      ctx.fillStyle = 'rgba(0,0,0,0.75)';
+      ctx.fillRect(0, 0, SW, SH_PANEL);
+      // Red header section (clipped by rounded path above)
       ctx.fillStyle = '#d62828';
       ctx.fillRect(0, 0, SW, SH_HEAD);
-      // Dark body — matches camera-tab card style
-      ctx.fillStyle = '#1e1e1e';
-      ctx.fillRect(0, SH_HEAD, SW, SH_BODY);
-      // Subtle border around the sign panel
-      ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(0.5, 0.5, SW - 1, SH_PANEL - 1);
-      // Stake post
-      ctx.fillStyle = '#888888';
+
+      ctx.restore(); // end clip
+
+      // Stake — red (#d62828) to match AR card pin stem colour
+      ctx.fillStyle = '#d62828';
       ctx.fillRect(SW / 2 - 1, SH_PANEL, 2, SH_STAKE);
 
       // ── Text ───────────────────────────────────────────────────────────────
-      var TW = SW - 8;      // max text width (4 px padding each side)
+      var TW = SW - 8;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
-      // Red header: address in top zone, town in bottom zone
-      var H1 = SH_HEAD * 0.38;   // address centre  (~8.4 for SH_HEAD=22)
-      var H2 = SH_HEAD * 0.78;   // town centre     (~17.2 for SH_HEAD=22)
+      // Header: street bold white, city rgba(255,255,255,0.85) — matches AR card
+      var H1 = SH_HEAD * 0.38;
+      var H2 = SH_HEAD * 0.78;
       ctx.fillStyle = '#ffffff';
       fitText(ctx, p.address, TW, 9, 5, true);
       ctx.fillText(p.address, SW / 2, H1);
-      fitText(ctx, p.town,    TW, 7, 5, false);
-      ctx.fillText(p.town,    SW / 2, H2);
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      fitText(ctx, p.town, TW, 7, 5, false);
+      ctx.fillText(p.town, SW / 2, H2);
 
-      // Dark body: 3 equal zones (SH_BODY / 3 ≈ 12.7 px each)
+      // Body: 3 zones — white stats then coral-red value, matching AR card colours
       var B0 = SH_HEAD;
       var BZ = SH_BODY / 3;
-      // Line 1 — beds / baths  (p.line1)
       ctx.fillStyle = '#ffffff';
       fitText(ctx, p.line1, TW, 8, 5, false);
       ctx.fillText(p.line1, SW / 2, B0 + BZ * 0.5);
-      // Line 2 — sqft  (p.line2)
       fitText(ctx, p.line2, TW, 8, 5, false);
       ctx.fillText(p.line2, SW / 2, B0 + BZ * 1.5);
-      // Line 3 — estimated value  (p.line3, coral-red to match camera card)
-      ctx.fillStyle = '#ff6b6b';
+      ctx.fillStyle = '#ff6b6b'; // statValue colour from AR card
       fitText(ctx, p.line3, TW, 9, 5, true);
       ctx.fillText(p.line3, SW / 2, B0 + BZ * 2.5);
 
