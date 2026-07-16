@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HouseLens - Ideas with Feedback</title>
+    <style>
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+            line-height: 1.6;
+            color: #222;
+        }
+        h1 {
+            font-size: 1.8em;
+            border-bottom: 2px solid #333;
+            padding-bottom: 8px;
+        }
+        h2 {
+            font-size: 1.3em;
+            margin-top: 36px;
+        }
+        ul {
+            padding-left: 24px;
+        }
+        li {
+            margin-bottom: 6px;
+        }
+        .response {
+            color: #1a5fb4;
+            margin: 8px 0 18px 24px;
+            padding-left: 12px;
+            border-left: 3px solid #1a5fb4;
+        }
+        .difficulty {
+            display: inline-block;
+            font-size: 0.8em;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-right: 6px;
+        }
+        .easy { background: #d4edda; color: #155724; }
+        .moderate { background: #fff3cd; color: #856404; }
+        .hard { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+
+<h1>HouseLens - Ideas with Feedback</h1>
+
+<h2 style="margin-top: 48px;">First Things First: Making the App Reliably Accessible</h2>
+
+<div class="response">
+    <p><strong>The problem today:</strong> The app currently runs through <strong>Expo Go</strong>, which is a developer testing tool &mdash; not a real distribution method. It's fragile by design: it can break when Expo Go updates, it requires opening a specific link that may expire, and it sometimes just doesn't load. This is why access has been inconsistent &mdash; it worked a time or two but not reliably.</p>
+
+    <p><strong>What needs to happen:</strong> We need to build a <strong>standalone app</strong> and install it on the phone directly. There are two paths depending on iPhone or Android:</p>
+</div>
+
+<h3 style="margin-left: 12px;">If on iPhone</h3>
+<div class="response">
+    <ol>
+        <li><strong>Apple Developer Account ($99/year).</strong> This is non-negotiable for distributing to iPhones outside the App Store. One account covers unlimited apps and up to 100 test devices.</li>
+        <li><strong>Use EAS Build to create a real app file.</strong> We run one command and Expo's servers build a proper iPhone app (an .ipa file). No Xcode or Mac needed for the build itself.</li>
+        <li><strong>Register the device.</strong> We add the iPhone's unique ID (UDID) to the developer account. This is a one-time step.</li>
+        <li><strong>Install via ad-hoc distribution.</strong> A link is sent, tap it, and the app installs on the home screen like any other app. No Expo Go. No special link to remember. It just lives on the phone.</li>
+    </ol>
+    <p><em>Alternatively, publishing to the App Store (free to submit with the developer account) means anyone can download it &mdash; no device registration needed, no limit on users. But ad-hoc is faster for getting started with a small group of testers.</em></p>
+</div>
+
+<h3 style="margin-left: 12px;">If on Android</h3>
+<div class="response">
+    <ol>
+        <li><strong>Use EAS Build to create an APK file.</strong> Again, one command. No Android Studio needed.</li>
+        <li><strong>Send the APK directly.</strong> Open it on the phone, allow "install from unknown sources" once, and it installs. Done.</li>
+        <li><em>Even easier alternative:</em> A Google Play Developer account ($25 one-time) lets us publish to the Play Store's internal testing track &mdash; install it from the Play Store directly.</li>
+    </ol>
+</div>
+
+<div class="response">
+    <p><strong>What this solves:</strong> Once the standalone app is on the phone, no one needs a laptop open, nothing needs to be running, and nothing expires. Open the app from the home screen and it just works. Updates get pushed automatically.</p>
+    <p><strong>This is something we can do right now</strong> &mdash; before building any new features. It's the right first step so the app can actually be used and tested going forward.</p>
+</div>
+
+<h2 style="margin-top: 48px;">What Would This Cost? (Hobby vs. Real Product)</h2>
+
+<div class="response">
+    <p>The app as it exists today costs <strong>$0/month</strong> to run. Below is a breakdown of what costs look like as features are added, at two scales.</p>
+</div>
+
+<table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+    <thead>
+        <tr style="background: #f0f0f0;">
+            <th style="text-align: left; padding: 10px; border: 1px solid #ccc;">Item</th>
+            <th style="text-align: center; padding: 10px; border: 1px solid #ccc;">Hobby / Just Us<br><small>(~1&ndash;5 users)</small></th>
+            <th style="text-align: center; padding: 10px; border: 1px solid #ccc;">Wider Audience<br><small>(hundreds+ users)</small></th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td style="padding: 10px; border: 1px solid #ccc;"><strong>Expo / EAS (build &amp; hosting)</strong></td>
+            <td style="text-align: center; padding: 10px; border: 1px solid #ccc;">Free tier covers it</td>
+            <td style="text-align: center; padding: 10px; border: 1px solid #ccc;">Free tier likely still fine; Production plan $99/mo if needed</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px; border: 1px solid #ccc;"><strong>Apple Developer Account</strong><br><small>(required to put the app on iPhones properly)</small></td>
+            <td style="text-align: center; padding: 10px; border: 1px solid #ccc;">$99/year</td>
+            <td style="text-align: center; padding: 10px; border: 1px solid #ccc;">$99/year</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px; border: 1px solid #ccc;"><strong>Google Play Developer Account</strong><br><small>(required for Android)</small></td>
+            <td style="text-align: center; padding: 10px; border: 1px solid #ccc;">$25 one-time</td>
+            <td style="text-align: center; padding: 10px; border: 1px solid #ccc;">$25 one-time</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px; border: 1px solid #ccc;"><strong>Real estate data API</strong><br><small>(ATTOM, RealtyMole, etc. &mdash; for house stats, sale status, estimates)</small></td>
+            <td style="text-align: center; padding: 10px; border: 1px solid #ccc;">$0&ndash;30/mo<br><small>RealtyMole has a free tier (50 calls/mo); enough for light personal use</small></td>
+            <td style="text-align: center; padding: 10px; border: 1px solid #ccc;">$50&ndash;300+/mo<br><small>Depends on call volume. ATTOM starts ~$150/mo for meaningful usage</small></td>
+        </tr>
+        <tr>
+            <td style="padding: 10px; border: 1px solid #ccc;"><strong>Maps</strong><br><small>(Google Maps or Mapbox for the map features)</small></td>
+            <td style="text-align: center; padding: 10px; border: 1px solid #ccc;">$0<br><small>Google gives $200/mo free credit; more than enough</small></td>
+            <td style="text-align: center; padding: 10px; border: 1px solid #ccc;">$0&ndash;100/mo<br><small>Free credit covers moderate use; heavy use may exceed it</small></td>
+        </tr>
+        <tr>
+            <td style="padding: 10px; border: 1px solid #ccc;"><strong>Backend server</strong><br><small>(needed for push notifications, dream house alerts)</small></td>
+            <td style="text-align: center; padding: 10px; border: 1px solid #ccc;">$0<br><small>Firebase free tier is plenty for a handful of users</small></td>
+            <td style="text-align: center; padding: 10px; border: 1px solid #ccc;">$0&ndash;50/mo<br><small>Firebase/Supabase free tiers are generous; costs kick in at scale</small></td>
+        </tr>
+        <tr>
+            <td style="padding: 10px; border: 1px solid #ccc;"><strong>School ratings API</strong><br><small>(GreatSchools)</small></td>
+            <td style="text-align: center; padding: 10px; border: 1px solid #ccc;">Free<br><small>Requires application for API key</small></td>
+            <td style="text-align: center; padding: 10px; border: 1px solid #ccc;">Free for non-commercial; licensing needed for commercial use</td>
+        </tr>
+        <tr style="background: #f7f7f7; font-weight: bold;">
+            <td style="padding: 10px; border: 1px solid #ccc;">Estimated total monthly cost</td>
+            <td style="text-align: center; padding: 10px; border: 1px solid #ccc; color: #155724;">$0&ndash;10/mo<br><small style="font-weight: normal;">(plus $99/yr for Apple if on iPhone)</small></td>
+            <td style="text-align: center; padding: 10px; border: 1px solid #ccc; color: #856404;">$100&ndash;500+/mo<br><small style="font-weight: normal;">(depending on API usage and user count)</small></td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="response">
+    <strong>Bottom line:</strong> For a hobby project with just a few people using it, almost everything can be done on free tiers. The only hard cost is the $99/year Apple Developer fee if on iPhone. A real estate data API with a free tier (like RealtyMole at 50 lookups/month) would be plenty for personal use. If this grew into something for a wider audience, the real estate data API is by far the biggest expense &mdash; that's where the useful data lives and providers charge accordingly.
+</div>
+
+<h2 style="margin-top: 48px;">Ideas</h2>
+
+<ul>
+    <li><strong>Augmented reality - point camera towards a house and it shows the info.</strong></li>
+</ul>
+<div class="response">
+    <span class="difficulty hard">Hardest</span>
+    What we have now is "point camera, identify house, show a card." True AR &mdash; where data hovers over the physical building in real-time as you move your phone &mdash; requires ARKit/ARCore integration, real-time building recognition, and precise GPS + spatial anchoring. This is possible in React Native, but it's genuinely hard, performance-intensive, and the kind of thing large teams at Google and Apple struggle with. I'd call this aspirational &mdash; something to aim for long-term, not a near-term build.
+</div>
+
+<ul>
+    <li><strong>Pok&eacute;mon Go sort of thing to add to saved houses</strong></li>
+</ul>
+<div class="response">
+    <span class="difficulty hard">Hardest</span> / <span class="difficulty moderate">Moderate</span>
+    Depends on what's meant here. If it's gamifying house-hunting &mdash; physically travel to houses to "collect" them, earn badges, build a collection &mdash; the game-like UI elements (animations, achievements, collection mechanics) are very doable. If it means actual AR objects appearing at house locations in your camera view, that runs into the same true-AR challenges above. The gamification side without AR is a fun, buildable concept.
+</div>
+
+<ul>
+    <li><strong>Shows house stats, even if not for sale - # of bedrooms, baths, sq footage, lot size, (what's it worth - estimate? - range from different sites or Zestimate or average?)</strong></li>
+</ul>
+<div class="response">
+    <span class="difficulty easy">Easier</span>
+    This is mostly about plugging in a real estate data API (like ATTOM, RealtyMole, or similar). The coding side is straightforward &mdash; we already identify the house and deep-link to Zillow. Showing the data directly in the app is a natural next step. The main cost is the API subscription itself (typically $50&ndash;200+/month depending on usage). Aggregating estimates from <em>multiple</em> sites is harder, since each provider has its own API and terms of service.
+</div>
+
+<ul>
+    <li><strong>Houses on sale - stats show as different color stats box/flag. Gray box for houses not on sale</strong></li>
+</ul>
+<div class="response">
+    <span class="difficulty easy">Easier</span>
+    Once we have listing data from an API, color-coding active listings vs. off-market properties is simple UI work. Straightforward to implement.
+</div>
+
+<ul>
+    <li><strong>Add logo for which company the house is listed on</strong></li>
+</ul>
+<div class="response">
+    <span class="difficulty easy">Easier</span>
+    If the data API returns the listing broker/company, displaying their logo is easy. We'd just need a small library of brokerage logos or pull them dynamically.
+</div>
+
+<ul>
+    <li><strong>Builds a map of saved houses</strong></li>
+</ul>
+<div class="response">
+    <span class="difficulty easy">Easier</span>
+    React Native has excellent map libraries. Dropping pins for saved houses on a map is a well-trodden path and very buildable. Great feature to include early.
+</div>
+
+<ul>
+    <li><strong>Neighborhood info, for large communities first. Local schools and quality.</strong></li>
+</ul>
+<div class="response">
+    <span class="difficulty moderate">Moderate</span>
+    Doable, but it pulls from multiple data sources. School ratings come from the GreatSchools API, neighborhood stats from census data or other providers. Each integration is individually manageable, but wiring them all together adds up. Good candidate for building incrementally &mdash; start with school ratings, then layer on more over time.
+</div>
+
+<ul>
+    <li><strong>Add school bus routes, public transit, other</strong></li>
+</ul>
+<div class="response">
+    <span class="difficulty moderate">Moderate</span>
+    Transit data is available through Google Maps APIs or local transit authority feeds (GTFS data). School bus routes are trickier &mdash; that data varies wildly by district and often isn't available in a standardized digital format. Transit: doable. School buses: much harder to source reliably.
+</div>
+
+<ul>
+    <li><strong>Map like a GPS with houses for sale in your area on any platform (Redfin, Zillow, others)</strong></li>
+</ul>
+<div class="response">
+    <span class="difficulty moderate">Moderate</span>
+    The map part is very doable. The challenge is the data &mdash; you need an API that provides all active listings in a geographic area. APIs like ATTOM can do this, but they cost money and have usage limits. Aggregating across Zillow, Redfin, and others simultaneously means multiple API integrations and navigating each provider's terms of service.
+</div>
+
+<ul>
+    <li><strong>Kind of like Waze. To drive around a town to discover what's on sale. With signs at the ends of roads like realtors put up.</strong></li>
+</ul>
+<div class="response">
+    <span class="difficulty moderate">Moderate</span>
+    Love this concept. The "virtual yard signs" on a map as you drive is a great UX idea. Technically it's a map with real-time GPS tracking and nearby-listing markers that update as you move. The map + GPS part is doable. The "signs at the ends of roads" would be map markers styled to look like realtor signs &mdash; a fun design challenge but buildable. Data sourcing (knowing what's for sale) is the same API question as above.
+</div>
+
+<ul>
+    <li><strong>Point at a single property with the camera for 5 seconds and it will auto pull up the listing</strong></li>
+</ul>
+<div class="response">
+    <span class="difficulty easy">Easier</span>
+    We already have the camera pointed at houses. Adding a timer that auto-triggers the lookup instead of requiring a button tap is a small UX enhancement. Very doable.
+</div>
+
+<ul>
+    <li><strong>Saving house on a dream house list so you get notified if it comes on sale</strong></li>
+</ul>
+<div class="response">
+    <span class="difficulty easy">Easier</span> (saving) / <span class="difficulty moderate">Moderate</span> (notifications)
+    The "dream house list" itself is easy &mdash; local storage of favorited properties. The <em>notifications when it comes on sale</em> part is harder: it requires a backend server that periodically checks listing status and sends push notifications. We don't have a backend right now (the app is entirely client-side), so adding one is a meaningful jump in complexity, though services like Firebase or Supabase make it manageable.
+</div>
+
+<ul>
+    <li><strong>Different tabs for the different functions</strong></li>
+</ul>
+<div class="response">
+    <span class="difficulty easy">Easier</span>
+    Just navigation and UI architecture. Easy to add with React Navigation (a standard library we'd use). This is more of a "when we're ready to organize the app into sections" task &mdash; Camera, Map, Saved Houses, etc.
+</div>
+
+<h2>Questions</h2>
+
+<ul>
+    <li><strong>How could this interplay with realtors and listings?</strong></li>
+</ul>
+<div class="response">
+    Several ways: a "Connect with an agent" button after a property lookup (agents pay referral fees for leads &mdash; $500+ per closed deal). Agents or brokerages could pay to be featured when users look up houses in their territory. The app could also surface listing agent contact info directly from the property data. This is both a feature and a monetization path.
+</div>
+
+<ul>
+    <li><strong>How does this work with condos or many unit apartments? Or in cities in general?</strong></li>
+</ul>
+<div class="response">
+    This is a real challenge. In a building with 200 units, the camera sees one building but there could be many listings inside it. There's no way to distinguish Unit 4B from Unit 12A by pointing a camera at the exterior. The solution would be a hybrid UX: when the app detects a multi-unit building, it shows a list view &mdash; "12 units in this building" &mdash; and lets you browse or filter. Dense urban areas also make GPS-based house identification less precise, so the app would lean more on address search than camera in those contexts.
+</div>
+
+<ul>
+    <li><strong>What other improvements to the process would increase the buyer's experience?</strong></li>
+</ul>
+<div class="response">
+    A few ideas: <strong>Commute time estimates</strong> (how long from this house to your workplace?), <strong>price history charts</strong> (has this house been going up or down in value?), <strong>comparable sales</strong> (what did similar nearby houses sell for recently?), and <strong>mortgage calculator</strong> (what would my monthly payment be at current rates?). Also: the ability to <strong>share a house with someone</strong> &mdash; couples house-hunting together could send properties back and forth within the app.
+</div>
+
+<h2 style="margin-top: 48px;">Follow-Up: AR Deep Dive &mdash; What Would It Actually Take?</h2>
+
+<div class="response">
+    <p>Good news first: <strong>the AR frameworks themselves are free.</strong> Apple's ARKit (for iPhones) and Google's ARCore (for Android) cost nothing to use. So there's no licensing fee or API cost for AR itself.</p>
+
+    <p>The cost and difficulty are almost entirely in <strong>development complexity</strong>. Here's why:</p>
+</div>
+
+<h3 style="margin-left: 12px;">The Core Technical Challenge</h3>
+<div class="response">
+    <p>For AR info to float over a specific house as you look at it, the app needs to solve three problems simultaneously:</p>
+    <ol>
+        <li><strong>Know exactly where you are.</strong> GPS on phones is accurate to about 3&ndash;5 meters (~10&ndash;16 feet). On a suburban street, that margin of error could put you at the wrong house. AR needs much more precision than that.</li>
+        <li><strong>Know exactly where the house is.</strong> We have street addresses, but translating "123 Main St" into a precise 3D point in space that the camera can anchor to is a hard problem.</li>
+        <li><strong>Track the building visually in real-time.</strong> As you move your phone around, the AR overlay needs to stay stuck to the building &mdash; not drift, wobble, or jump to the neighbor's house. This requires real-time visual processing that's computationally expensive.</li>
+    </ol>
+</div>
+
+<h3 style="margin-left: 12px;">What Exists Today</h3>
+<div class="response">
+    <ul>
+        <li><strong>ARKit/ARCore</strong> are great at detecting flat surfaces (tables, floors, walls) and placing virtual objects on them. They're <em>not</em> designed to recognize "that's a house and here are its boundaries."</li>
+        <li><strong>Google's Geospatial API</strong> (part of ARCore) is the closest thing to what we'd need. It uses Google Street View data to precisely anchor AR content to real-world locations. It's free up to a usage limit. However, it works best in areas with good Street View coverage, and precision varies.</li>
+        <li><strong>LiDAR</strong> (on iPhone Pro models) helps with depth sensing and could improve accuracy, but it only works at close range (~5 meters) and limits the audience to premium devices.</li>
+    </ul>
+</div>
+
+<h3 style="margin-left: 12px;">Realistic Options, From Simplest to Hardest</h3>
+<div class="response">
+    <table style="width: 100%; border-collapse: collapse; margin: 12px 0;">
+        <thead>
+            <tr style="background: #e8f0fe;">
+                <th style="text-align: left; padding: 8px; border: 1px solid #ccc;">Approach</th>
+                <th style="text-align: left; padding: 8px; border: 1px solid #ccc;">What It Looks Like</th>
+                <th style="text-align: center; padding: 8px; border: 1px solid #ccc;">Difficulty</th>
+                <th style="text-align: center; padding: 8px; border: 1px solid #ccc;">Added Cost</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="padding: 8px; border: 1px solid #ccc;"><strong>"AR-lite"</strong><br><small>What we roughly have now</small></td>
+                <td style="padding: 8px; border: 1px solid #ccc;">Point camera at a house, tap a button (or wait 5 sec), and a card slides up with property info. Camera is the viewfinder but info isn't anchored to the building.</td>
+                <td style="text-align: center; padding: 8px; border: 1px solid #ccc;"><span class="difficulty easy">Done</span></td>
+                <td style="text-align: center; padding: 8px; border: 1px solid #ccc;">$0</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px; border: 1px solid #ccc;"><strong>GPS + compass overlay</strong></td>
+                <td style="padding: 8px; border: 1px solid #ccc;">Camera view with floating labels/pins that appear in the direction of nearby houses based on GPS. Labels move as you pan the phone. Think "compass app meets property data." Not pinned to the building precisely, but directionally accurate.</td>
+                <td style="text-align: center; padding: 8px; border: 1px solid #ccc;"><span class="difficulty moderate">Moderate</span></td>
+                <td style="text-align: center; padding: 8px; border: 1px solid #ccc;">$0</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px; border: 1px solid #ccc;"><strong>Google Geospatial AR</strong></td>
+                <td style="padding: 8px; border: 1px solid #ccc;">Data anchored to real-world coordinates using Google's Street View data. More precise than GPS alone. Labels stay relatively fixed to the real building as you move.</td>
+                <td style="text-align: center; padding: 8px; border: 1px solid #ccc;"><span class="difficulty hard">Hard</span></td>
+                <td style="text-align: center; padding: 8px; border: 1px solid #ccc;">$0 at low volume<br><small>Google provides free quota</small></td>
+            </tr>
+            <tr>
+                <td style="padding: 8px; border: 1px solid #ccc;"><strong>Full AR with building recognition</strong></td>
+                <td style="padding: 8px; border: 1px solid #ccc;">Data overlaid precisely on each building in view. App recognizes individual structures and attaches info. The "sci-fi" version.</td>
+                <td style="text-align: center; padding: 8px; border: 1px solid #ccc;"><span class="difficulty hard">Extremely Hard</span></td>
+                <td style="text-align: center; padding: 8px; border: 1px solid #ccc;">Potentially high<br><small>Custom ML models, cloud processing</small></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="response">
+    <p><strong>Recommendation:</strong> The <strong>GPS + compass overlay</strong> approach is the sweet spot. It gives a genuinely AR-like feeling &mdash; you hold up your phone, look around, and see property info floating in the direction of nearby houses. It doesn't require ARKit/ARCore at all, uses tech we already have in the app (GPS + compass), and could be built relatively quickly. It's not pixel-perfect AR, but for most users it would feel like it. That's probably where the most value is without getting into a multi-month engineering rabbit hole.</p>
+</div>
+
+<h2 style="margin-top: 48px;">Follow-Up: Listing Data, Platform Links &amp; Monetization</h2>
+
+<div class="response">
+    <p>This is a great instinct. The idea of showing <em>where</em> a house is listed and letting the user choose where to view it is both a strong feature and a clear monetization path.</p>
+</div>
+
+<h3 style="margin-left: 12px;">Where Does Listing Data Come From?</h3>
+<div class="response">
+    <p>All home listings ultimately flow from the <strong>MLS (Multiple Listing Service)</strong> &mdash; a shared database that real estate agents use. Zillow, Redfin, Realtor.com, and others all pull from MLS data, then add their own extras (Zestimates, reviews, etc.).</p>
+    <p>To show "this house is listed on Zillow, Redfin, and Realtor.com," we have a few options:</p>
+    <ul>
+        <li><strong>Deep links to each platform.</strong> Given an address, we can construct URLs that go directly to that property on Zillow, Redfin, Realtor.com, etc. This is the simplest approach and doesn't require any API access &mdash; we just link out. The user taps, picks their preferred platform, and views the listing there. <span class="difficulty easy" style="vertical-align: middle;">We can do this now</span></li>
+        <li><strong>Real estate data APIs.</strong> Services like <strong>ATTOM</strong>, <strong>RealtyMole</strong>, or <strong>RentCast</strong> provide property data (beds, baths, price, listing status, listing broker) via API. This lets us show the data <em>inside</em> the app rather than just linking out. Cost: free tier for hobby use, $50&ndash;300+/mo for heavier use.</li>
+        <li><strong>Direct MLS access.</strong> This would give us the richest data, but MLS access typically requires being a licensed brokerage or partnering with one. Not realistic for a hobby project, but worth knowing about if it ever got serious.</li>
+    </ul>
+</div>
+
+<h3 style="margin-left: 12px;">How the UX Could Work</h3>
+<div class="response">
+    <p>When you look up a house, the app shows a property card with basic info. Below that:</p>
+    <ul>
+        <li>A <strong>"View Listing On:"</strong> section with tappable logos &mdash; Zillow, Redfin, Realtor.com, etc.</li>
+        <li>Each logo is a deep link that opens that property directly on that platform (in their app if installed, or their website).</li>
+        <li>If the house is <strong>for sale</strong>, the listing platform logos are highlighted and prominent.</li>
+        <li>If <strong>not for sale</strong>, the links still work (Zillow and Redfin show info on off-market homes too) but are styled more subtly.</li>
+    </ul>
+</div>
+
+<h3 style="margin-left: 12px;">The Monetization Angle</h3>
+<div class="response">
+    <p>This is where it gets interesting. There are several revenue models here, in order of how realistic they are:</p>
+    <ol>
+        <li><strong>Affiliate / referral traffic.</strong> Some platforms have affiliate or partner programs that pay when you send them users who then take actions (contact an agent, schedule a tour, etc.). Zillow has a <strong>Premier Agent</strong> program, and Realtor.com has partnerships. If HouseLens is driving meaningful traffic, these become real conversations.</li>
+        <li><strong>Paid placement / "featured" logos.</strong> If the app had a user base, real estate platforms or local brokerages could pay to have their logo appear first or more prominently in the "View Listing On" section. Think of it like Google search ads &mdash; organic results are free, but the top spot is paid.</li>
+        <li><strong>Lead generation for agents.</strong> A "Connect with a local agent" button alongside the platform logos. Agents pay handsomely for qualified leads ($20&ndash;50+ per lead, and much more per closed deal). Services like OJO Labs and HomeLight built entire businesses on this model.</li>
+        <li><strong>Direct platform partnerships.</strong> If the app reached meaningful scale, Zillow or Redfin might pay to be the <em>default</em> or exclusive listing partner. This is a longer-term play but it's the kind of deal that could be significant.</li>
+    </ol>
+    <p><strong>What we could build right now for free:</strong> The multi-platform deep linking with logos. No API costs, no partnerships needed. Just a clean UX that sends users to their preferred platform. That alone makes the app more useful, and it's the foundation all of the monetization options above would build on.</p>
+</div>
+
+<h2 style="margin-top: 48px;">Suggested Starting Point</h2>
+<div class="response" style="font-size: 1.05em;">
+    <strong>Step 1:</strong> Get the app properly installed as a standalone build (no more Expo Go).<br><br>
+    <strong>Step 2:</strong> Add tabbed navigation + saved houses list + map of saved houses. These don't require paid APIs, and they transform the app from a single-trick demo into something that feels like a real product.<br><br>
+    <strong>Step 3:</strong> Layer on a real estate data API for house stats and for-sale status.
+</div>
+
+</body>
+</html>
