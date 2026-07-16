@@ -1,42 +1,51 @@
 import { useEffect, useRef, useState } from "react";
 import { DeviceMotion } from "expo-sensors";
 
-// Low-pass filter the raw accelerometer to isolate gravity from hand motion.
-// At ~60fps, 0.05 gives a time constant of ~330ms — slow enough to reject
-// shake, fast enough to track intentional tilts.
-const GRAVITY_SMOOTHING = 0.05;
+// Fallback EMA alpha — used only when iOS sensor fusion isn't available.
+// At 60 Hz, α=0.1 ≈ 167ms time constant: rejects hand shake, tracks tilts.
+const EMA_ALPHA = 0.1;
 
 /**
- * Returns a smoothed device pitch in degrees.
- * 0 = phone pointing at horizon
- * positive = phone tilted up (looking at sky)
- * negative = phone tilted down (looking at ground)
+ * Camera pitch in degrees:
+ *   0°  = camera at the horizon
+ *  >0°  = camera above the horizon (phone tilted back)
+ *  <0°  = camera below the horizon (phone angled down)
  */
 export function useDevicePitch(): number {
   const [pitch, setPitch] = useState(0);
-  const gravityRef = useRef<{ x: number; y: number; z: number } | null>(null);
+  const smoothRef = useRef<{ y: number; z: number } | null>(null);
 
   useEffect(() => {
-    DeviceMotion.setUpdateInterval(16);
+    DeviceMotion.setUpdateInterval(16); // ~60 Hz
 
     const sub = DeviceMotion.addListener((data) => {
-      const g = data.accelerationIncludingGravity;
-      if (!g) return;
+      const aig = data.accelerationIncludingGravity;
+      if (!aig) return;
 
-      if (gravityRef.current === null) {
-        gravityRef.current = { x: g.x, y: g.y, z: g.z };
+      let gy: number;
+      let gz: number;
+
+      const ua = data.acceleration;
+      if (ua != null) {
+        // iOS sensor fusion: subtract user acceleration to isolate gravity.
+        // Already free of hand-motion noise — no further smoothing needed.
+        gy = aig.y - ua.y;
+        gz = aig.z - ua.z;
       } else {
-        gravityRef.current.x += GRAVITY_SMOOTHING * (g.x - gravityRef.current.x);
-        gravityRef.current.y += GRAVITY_SMOOTHING * (g.y - gravityRef.current.y);
-        gravityRef.current.z += GRAVITY_SMOOTHING * (g.z - gravityRef.current.z);
+        // No sensor fusion — smooth the raw accelerometer manually.
+        if (!smoothRef.current) {
+          smoothRef.current = { y: aig.y, z: aig.z };
+        } else {
+          smoothRef.current.y += EMA_ALPHA * (aig.y - smoothRef.current.y);
+          smoothRef.current.z += EMA_ALPHA * (aig.z - smoothRef.current.z);
+        }
+        gy = smoothRef.current.y;
+        gz = smoothRef.current.z;
       }
 
-      // Convention-agnostic: atan2(z, |y|) = 0 at horizon regardless of whether
-      // Expo reports y as +9.8 or -9.8 when the phone is held vertically.
-      // Sign of pitch follows z: on iOS, z > 0 when camera tilts up toward sky.
-      const { y, z } = gravityRef.current;
-      const rawPitch = (Math.atan2(z, Math.abs(y)) * 180) / Math.PI;
-      setPitch(rawPitch);
+      // In portrait: gy ≈ ±9.81 when upright; gz > 0 when camera tilts above horizon.
+      // abs(gy) avoids sign-flip bugs from varying accelerometer conventions.
+      setPitch((Math.atan2(gz, Math.abs(gy)) * 180) / Math.PI);
     });
 
     return () => sub.remove();

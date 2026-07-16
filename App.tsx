@@ -12,7 +12,10 @@ import { CameraScreen } from "./src/screens/CameraScreen";
 import { SavedHousesScreen } from "./src/screens/SavedHousesScreen";
 import { MapScreen } from "./src/screens/MapScreen";
 import { DriveScreen } from "./src/screens/DriveScreen";
+import { YardSignScreen } from "./src/screens/YardSignScreen";
+import { SettingsScreen } from "./src/screens/SettingsScreen";
 import { useSavedHouses } from "./src/hooks/useSavedHouses";
+import { useSettings } from "./src/hooks/useSettings";
 
 type AppState = "loading" | "granted" | "denied";
 
@@ -22,6 +25,7 @@ export default function App() {
   const [appState, setAppState] = useState<AppState>("loading");
   const [permResult, setPermResult] = useState<PermissionResult | null>(null);
   const { savedHouses, saveHouse, removeHouse, isSaved } = useSavedHouses();
+  const { settings, updateSetting } = useSettings();
   const [focusHouse, setFocusHouse] = useState<SavedHouse | null>(null);
   const navigationRef = useRef<any>(null);
 
@@ -95,13 +99,27 @@ export default function App() {
             <>
               <CameraScreen
                 onSave={saveHouse}
+                onRemove={removeHouse}
                 isSaved={isSaved}
                 savedHouses={savedHouses}
+                autoLookup={settings.autoLookup}
               />
               <StatusBar style="light" />
             </>
           )}
         </Tab.Screen>
+        <Tab.Screen
+          name="YardSigns"
+          options={{
+            tabBarLabel: "Yard Signs",
+            tabBarIcon: ({ color, size }) => (
+              <Text style={{ fontSize: size, color }}>🪧</Text>
+            ),
+            headerShown: true,
+            headerTitle: "Yard Signs",
+          }}
+          component={YardSignScreen}
+        />
         <Tab.Screen
           name="Saved"
           options={{
@@ -152,6 +170,21 @@ export default function App() {
           }}
           component={DriveScreen}
         />
+        <Tab.Screen
+          name="Settings"
+          options={{
+            tabBarLabel: "Settings",
+            tabBarIcon: ({ color, size }) => (
+              <Text style={{ fontSize: size, color }}>⚙️</Text>
+            ),
+            headerShown: true,
+            headerTitle: "Settings",
+          }}
+        >
+          {() => (
+            <SettingsScreen settings={settings} onUpdate={updateSetting} />
+          )}
+        </Tab.Screen>
       </Tab.Navigator>
     </NavigationContainer>
   );

@@ -10,8 +10,8 @@ import { Crosshair } from "../components/Crosshair";
 import { CompassHeading } from "../components/CompassHeading";
 import { DistanceSlider } from "../components/DistanceSlider";
 import { LookupButton } from "../components/LookupButton";
-import { AddressCard } from "../components/AddressCard";
 import { AROverlay } from "../components/AROverlay";
+import { AddressCard } from "../components/AddressCard";
 import { LookupResult } from "../types";
 import { SavedHouse } from "../hooks/useSavedHouses";
 
@@ -20,11 +20,13 @@ const HEADING_THRESHOLD = 8;
 
 interface CameraScreenProps {
   onSave?: (result: LookupResult) => void;
+  onRemove?: (address: string) => void;
   isSaved?: (address: string) => boolean;
   savedHouses?: SavedHouse[];
+  autoLookup?: boolean;
 }
 
-export function CameraScreen({ onSave, isSaved, savedHouses = [] }: CameraScreenProps) {
+export function CameraScreen({ onSave, onRemove, isSaved, savedHouses = [], autoLookup = false }: CameraScreenProps) {
   const [distance, setDistance] = useState(DEFAULT_DISTANCE);
   const { coords } = useLocation();
   const { heading } = useCompassHeading();
@@ -42,14 +44,9 @@ export function CameraScreen({ onSave, isSaved, savedHouses = [] }: CameraScreen
     await lookup(coords, heading, distance);
   };
 
-  // The auto-lookup interval below captures handleLookup when the effect runs,
-  // which can hold a stale heading. The ref always points at the latest one.
-  const handleLookupRef = useRef(handleLookup);
-  handleLookupRef.current = handleLookup;
-
-  // Auto-lookup timer — paused whenever a result/error card is on screen
+  // Auto-lookup timer
   useEffect(() => {
-    if (!canLookup || state.status !== "idle") {
+    if (!canLookup || state.status === "loading" || state.status === "success") {
       setAutoProgress(0);
       return;
     }
@@ -65,8 +62,9 @@ export function CameraScreen({ onSave, isSaved, savedHouses = [] }: CameraScreen
   }, [heading, canLookup, state.status]);
 
   useEffect(() => {
-    if (!canLookup || state.status !== "idle") {
+    if (!autoLookup || !canLookup || state.status === "loading" || state.status === "success") {
       if (timerRef.current) clearInterval(timerRef.current);
+      setAutoProgress(0);
       return;
     }
 
@@ -75,7 +73,7 @@ export function CameraScreen({ onSave, isSaved, savedHouses = [] }: CameraScreen
         const next = prev + 0.1;
         if (next >= AUTO_LOOKUP_SECONDS) {
           if (timerRef.current) clearInterval(timerRef.current);
-          setTimeout(() => handleLookupRef.current(), 0);
+          setTimeout(() => handleLookup(), 0);
           return 0;
         }
         return next;
@@ -85,7 +83,7 @@ export function CameraScreen({ onSave, isSaved, savedHouses = [] }: CameraScreen
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [canLookup, state.status, coords, distance]);
+  }, [autoLookup, canLookup, state.status, coords, distance]);
 
   return (
     <View style={styles.container}>
@@ -100,30 +98,24 @@ export function CameraScreen({ onSave, isSaved, savedHouses = [] }: CameraScreen
         </View>
 
         <View style={styles.bottomSection} pointerEvents="box-none">
-          {state.status === "idle" ? (
-            <>
-              <DistanceSlider distance={distance} onDistanceChange={setDistance} />
+          <AddressCard
+            state={state}
+            onDismiss={reset}
+            onSave={onSave}
+            onRemove={onRemove}
+            isSaved={state.status === "success" ? isSaved?.(state.result.address) : false}
+          />
 
-              <View style={styles.buttonRow}>
-                <LookupButton
-                  onPress={handleLookup}
-                  disabled={!canLookup}
-                  loading={false}
-                  autoProgress={autoProgress / AUTO_LOOKUP_SECONDS}
-                />
-              </View>
-            </>
-          ) : (
-            <AddressCard
-              state={state}
-              onDismiss={reset}
-              onSave={onSave}
-              isSaved={
-                state.status === "success" &&
-                (isSaved?.(state.result.address) ?? false)
-              }
+          <DistanceSlider distance={distance} onDistanceChange={setDistance} />
+
+          <View style={styles.buttonRow}>
+            <LookupButton
+              onPress={handleLookup}
+              disabled={!canLookup}
+              loading={state.status === "loading"}
+              autoProgress={autoProgress / AUTO_LOOKUP_SECONDS}
             />
-          )}
+          </View>
         </View>
       </View>
 
