@@ -44,9 +44,14 @@ export function CameraScreen({ onSave, onRemove, isSaved, savedHouses = [], auto
     await lookup(coords, heading, distance);
   };
 
-  // Auto-lookup timer
+  // The auto-lookup interval below captures handleLookup when the effect runs,
+  // which can hold a stale heading. The ref always points at the latest one.
+  const handleLookupRef = useRef(handleLookup);
+  handleLookupRef.current = handleLookup;
+
+  // Auto-lookup timer — paused whenever a result/error card is on screen
   useEffect(() => {
-    if (!canLookup || state.status === "loading" || state.status === "success") {
+    if (!canLookup || state.status !== "idle") {
       setAutoProgress(0);
       return;
     }
@@ -62,7 +67,7 @@ export function CameraScreen({ onSave, onRemove, isSaved, savedHouses = [], auto
   }, [heading, canLookup, state.status]);
 
   useEffect(() => {
-    if (!autoLookup || !canLookup || state.status === "loading" || state.status === "success") {
+    if (!autoLookup || !canLookup || state.status !== "idle") {
       if (timerRef.current) clearInterval(timerRef.current);
       setAutoProgress(0);
       return;
@@ -73,7 +78,7 @@ export function CameraScreen({ onSave, onRemove, isSaved, savedHouses = [], auto
         const next = prev + 0.1;
         if (next >= AUTO_LOOKUP_SECONDS) {
           if (timerRef.current) clearInterval(timerRef.current);
-          setTimeout(() => handleLookup(), 0);
+          setTimeout(() => handleLookupRef.current(), 0);
           return 0;
         }
         return next;
