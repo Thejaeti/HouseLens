@@ -10,6 +10,7 @@ import { Crosshair } from "../components/Crosshair";
 import { CompassHeading } from "../components/CompassHeading";
 import { DistanceSlider } from "../components/DistanceSlider";
 import { LookupButton } from "../components/LookupButton";
+import { AddressCard } from "../components/AddressCard";
 import { AROverlay } from "../components/AROverlay";
 import { LookupResult } from "../types";
 import { SavedHouse } from "../hooks/useSavedHouses";
@@ -41,9 +42,14 @@ export function CameraScreen({ onSave, isSaved, savedHouses = [] }: CameraScreen
     await lookup(coords, heading, distance);
   };
 
-  // Auto-lookup timer
+  // The auto-lookup interval below captures handleLookup when the effect runs,
+  // which can hold a stale heading. The ref always points at the latest one.
+  const handleLookupRef = useRef(handleLookup);
+  handleLookupRef.current = handleLookup;
+
+  // Auto-lookup timer — paused whenever a result/error card is on screen
   useEffect(() => {
-    if (!canLookup || state.status === "loading" || state.status === "success") {
+    if (!canLookup || state.status !== "idle") {
       setAutoProgress(0);
       return;
     }
@@ -59,7 +65,7 @@ export function CameraScreen({ onSave, isSaved, savedHouses = [] }: CameraScreen
   }, [heading, canLookup, state.status]);
 
   useEffect(() => {
-    if (!canLookup || state.status === "loading" || state.status === "success") {
+    if (!canLookup || state.status !== "idle") {
       if (timerRef.current) clearInterval(timerRef.current);
       return;
     }
@@ -69,7 +75,7 @@ export function CameraScreen({ onSave, isSaved, savedHouses = [] }: CameraScreen
         const next = prev + 0.1;
         if (next >= AUTO_LOOKUP_SECONDS) {
           if (timerRef.current) clearInterval(timerRef.current);
-          setTimeout(() => handleLookup(), 0);
+          setTimeout(() => handleLookupRef.current(), 0);
           return 0;
         }
         return next;
@@ -94,16 +100,30 @@ export function CameraScreen({ onSave, isSaved, savedHouses = [] }: CameraScreen
         </View>
 
         <View style={styles.bottomSection} pointerEvents="box-none">
-          <DistanceSlider distance={distance} onDistanceChange={setDistance} />
+          {state.status === "idle" ? (
+            <>
+              <DistanceSlider distance={distance} onDistanceChange={setDistance} />
 
-          <View style={styles.buttonRow}>
-            <LookupButton
-              onPress={handleLookup}
-              disabled={!canLookup}
-              loading={state.status === "loading"}
-              autoProgress={autoProgress / AUTO_LOOKUP_SECONDS}
+              <View style={styles.buttonRow}>
+                <LookupButton
+                  onPress={handleLookup}
+                  disabled={!canLookup}
+                  loading={false}
+                  autoProgress={autoProgress / AUTO_LOOKUP_SECONDS}
+                />
+              </View>
+            </>
+          ) : (
+            <AddressCard
+              state={state}
+              onDismiss={reset}
+              onSave={onSave}
+              isSaved={
+                state.status === "success" &&
+                (isSaved?.(state.result.address) ?? false)
+              }
             />
-          </View>
+          )}
         </View>
       </View>
 
